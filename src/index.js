@@ -234,15 +234,21 @@ export async function collectUsage(ctx) {
         if (attached.has(meta.id)) continue
         const state = cache.sessions[meta.id] ?? createUsageState()
         const revision = revisionOf.get(meta.id)
-        const changed = state.kind !== 'persisted' || (revision !== undefined && revision !== state.revision) || revision === undefined
+        // Read when the fold kind changed, the backend's opaque revision moved,
+        // or no revision is exposed at all (fall back to delta probing).
+        const changed = state.kind !== 'persisted' || revision === undefined || revision !== state.revision
         if (changed) {
           try {
             const wasPersisted = state.kind === 'persisted'
             const fromSeq = wasPersisted ? state.consumed : 0
+            // readFrom(id, fromSeq) returns events with seq >= fromSeq (inclusive).
             const { events } = await persistence.readFrom(meta.id, fromSeq)
             if (!wasPersisted) resetFold(state)
             const fresh = wasPersisted ? events.filter((event) => event.seq > (state.consumed ?? 0)) : events
-            const contiguous = fresh.length === 0 ? state.consumed === 0 : fresh[0].seq === state.consumed + 1
+            // No new events is the normal unchanged case — a no-op, NOT a
+            // rewrite signal. A gap (fresh[0].seq > consumed + 1) means the
+            // log was truncated or rewritten: refold the whole log.
+            const contiguous = fresh.length === 0 || fresh[0].seq === state.consumed + 1
             if (!contiguous && state.consumed > 0) {
               // Log truncated or rewritten: refold the whole log.
               resetFold(state)
