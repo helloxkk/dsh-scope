@@ -21,7 +21,7 @@ export const CSS = `
 .dcl-ring-bg{fill:none;stroke:var(--dsw-alias-border-l2);stroke-width:2}
 .dcl-ring-fg{fill:none;stroke:var(--dsw-alias-state-business-primary);stroke-width:2;transition:stroke-dasharray .3s ease}
 
-.dcl-panel{position:absolute;top:calc(100% + 6px);right:0;z-index:40;width:340px;max-width:calc(100vw - 24px);display:flex;flex-direction:column;border:1px solid var(--dsw-alias-border-l1);border-radius:12px;background:var(--dsw-alias-bg-overlay,var(--dsw-alias-bg-base));box-shadow:var(--dsw-shadow-lv2,0 8px 24px rgba(0,0,0,.16));overflow:hidden}
+.dcl-panel{position:absolute;top:calc(100% + 6px);right:0;z-index:40;width:340px;max-width:calc(100vw - 24px);display:flex;flex-direction:column;border:1px solid var(--dsw-alias-border-l1);border-radius:12px;background:var(--dsw-alias-bg-layer-2,var(--dsw-alias-bg-base));box-shadow:var(--dsw-shadow-lv2,0 8px 24px rgba(0,0,0,.16));overflow:hidden}
 .dcl-head{display:flex;align-items:center;justify-content:space-between;min-height:40px;padding:8px 14px;border-bottom:1px solid var(--dsw-alias-border-l2);flex:none}
 .dcl-title{color:var(--dsw-alias-label-primary);font-size:13px;font-weight:500;line-height:20px}
 .dcl-body{padding:8px 14px 14px;overflow-y:auto;max-height:60vh;display:flex;flex-direction:column;gap:12px;--dsh-scrollbar-thumb:var(--dsw-alias-scrollbar-bg-l2);--dsh-scrollbar-thumb-hover:var(--dsw-alias-scrollbar-hover-l2)}
@@ -62,7 +62,7 @@ export const CSS = `
 .dcl-iconbtn{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border:none;border-radius:6px;background:transparent;color:var(--dsw-alias-label-tertiary);cursor:pointer}
 .dcl-iconbtn:hover{color:var(--dsw-alias-label-secondary);background:var(--dsw-alias-interactive-bg-hover)}
 
-.dcl-heatpanel{position:fixed;left:12px;bottom:96px;z-index:40;width:600px;max-width:calc(100vw - 24px);display:flex;flex-direction:column;border:1px solid var(--dsw-alias-border-l1);border-radius:12px;background:var(--dsw-alias-bg-overlay,var(--dsw-alias-bg-base));box-shadow:var(--dsw-shadow-lv2,0 8px 24px rgba(0,0,0,.16));overflow:hidden}
+.dcl-heatpanel{position:fixed;left:12px;bottom:96px;z-index:40;width:600px;max-width:calc(100vw - 24px);display:flex;flex-direction:column;border:1px solid var(--dsw-alias-border-l1);border-radius:12px;background:var(--dsw-alias-bg-layer-2,var(--dsw-alias-bg-base));box-shadow:var(--dsw-shadow-lv2,0 8px 24px rgba(0,0,0,.16));overflow:hidden}
 .dcl-heatbody{padding:10px 14px 14px;overflow-y:auto;max-height:70vh;display:flex;flex-direction:column;gap:10px;--dsh-scrollbar-thumb:var(--dsw-alias-scrollbar-bg-l2);--dsh-scrollbar-thumb-hover:var(--dsw-alias-scrollbar-hover-l2)}
 .dcl-heaterror{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;padding:7px 8px;border-radius:8px;background:var(--dsw-alias-interactive-bg-hover-danger);color:var(--dsw-alias-state-error-primary);font-size:12px;line-height:18px}
 .dcl-retry{border:none;background:none;color:inherit;font:inherit;cursor:pointer;flex:none;padding:0;text-decoration:underline}
