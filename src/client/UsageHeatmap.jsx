@@ -222,13 +222,16 @@ export function UsageHeatmap({ wide, t }) {
                       <span style={{ gridRow: 4 }}>{t('heat.wed')}</span>
                       <span style={{ gridRow: 6 }}>{t('heat.fri')}</span>
                     </div>
-                    <div className="dcl-grid" role="grid">
+                    <div className="dcl-grid" role="group" aria-label={t('heat.gridLabel')}>
                       {grid.columns.map((col, i) => (
-                        <div key={i} className="dcl-gridcol" role="gridcell">
+                        <div key={i} className="dcl-gridcol">
                           {col.map((cell, j) => {
                             if (cell === null) return <span key={j} className="dcl-cell dcl-cell-null" />
                             const lvl = levelOf(cell.tokens, grid.max)
                             const isToday = cell.key === keyOf(today)
+                            const tip = cell.entry
+                              ? t('heat.dayTip', { date: cell.key, tokens: fmt(cell.tokens), n: cell.entry.sessions })
+                              : t('heat.dayTipEmpty', { date: cell.key })
                             return (
                               <button
                                 key={j}
@@ -237,7 +240,8 @@ export function UsageHeatmap({ wide, t }) {
                                 data-today={isToday || undefined}
                                 data-selected={selected === cell.key || undefined}
                                 onClick={() => { setSelected((v) => (v === cell.key ? null : cell.key)) }}
-                                title={`${cell.key} · ${fmt(cell.tokens)} tokens${cell.entry ? ` · ${cell.entry.sessions} session(s)` : ''}`}
+                                title={tip}
+                                aria-label={tip}
                               />
                             )
                           })}
