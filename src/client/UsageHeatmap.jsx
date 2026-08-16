@@ -38,9 +38,7 @@ function dateOf(key) {
  * that contains today. Cells outside the range stay null.
  */
 function buildGrid(byKey, today) {
-  const endOfWeek = new Date(today)
-  endOfWeek.setDate(endOfWeek.getDate() + ((7 - ((endOfWeek.getDay() + 6) % 7) - 1) % 7 + 1) - 1)
-  // Align: last column's Sunday.
+  // Align: the last column's Sunday (Monday-based week).
   const lastSunday = new Date(today)
   lastSunday.setDate(lastSunday.getDate() + (7 - ((lastSunday.getDay() + 6) % 7 + 1) + 7) % 7)
   const columns = []
@@ -74,7 +72,7 @@ function levelOf(tokens, max) {
 }
 
 /** Month labels: one per column where the month changes inside the grid. */
-function monthMarks(columns, locale) {
+function monthMarks(columns, locale, today) {
   const marks = []
   let seen = -1
   columns.forEach((col, i) => {
@@ -82,7 +80,7 @@ function monthMarks(columns, locale) {
     if (first === undefined) return
     const m = first.day.getMonth()
     if (m !== seen) {
-      if (i > 0 || m !== new Date().getMonth()) {
+      if (i > 0 || m !== today.getMonth()) {
         marks.push({ col: i, label: first.day.toLocaleDateString(locale, { month: 'short' }) })
       }
       seen = m
@@ -131,10 +129,11 @@ export function UsageHeatmap({ wide, t }) {
   }, [data])
 
   const today = useMemo(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d }, [data])
+  const todayKey = useMemo(() => keyOf(today), [today])
 
   const grid = useMemo(() => buildGrid(byKey, today), [byKey, today])
   const locale = typeof navigator !== 'undefined' ? navigator.language : 'en'
-  const marks = useMemo(() => monthMarks(grid.columns, locale), [grid, locale])
+  const marks = useMemo(() => monthMarks(grid.columns, locale, today), [grid, locale, today])
 
   // Summary chips over the same window.
   const summary = useMemo(() => {
@@ -148,8 +147,8 @@ export function UsageHeatmap({ wide, t }) {
       return tokens
     }
     const total = data.days.reduce((acc, day) => acc + day.tokens, 0)
-    return { today: byKey.get(keyOf(today))?.tokens ?? 0, w1: sumFrom(7 * MS_DAY), y1: sumFrom(365 * MS_DAY), total }
-  }, [data, byKey, today])
+    return { today: byKey.get(todayKey)?.tokens ?? 0, w1: sumFrom(7 * MS_DAY), y1: sumFrom(365 * MS_DAY), total }
+  }, [data, byKey, todayKey])
 
   const sel = selected !== null ? byKey.get(selected) : undefined
 
@@ -228,7 +227,7 @@ export function UsageHeatmap({ wide, t }) {
                           {col.map((cell, j) => {
                             if (cell === null) return <span key={j} className="dcl-cell dcl-cell-null" />
                             const lvl = levelOf(cell.tokens, grid.max)
-                            const isToday = cell.key === keyOf(today)
+                            const isToday = cell.key === todayKey
                             const tip = cell.entry
                               ? t('heat.dayTip', { date: cell.key, tokens: fmt(cell.tokens), n: cell.entry.sessions })
                               : t('heat.dayTipEmpty', { date: cell.key })
