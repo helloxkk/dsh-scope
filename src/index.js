@@ -1,18 +1,18 @@
 /**
- * dsh-context-lens — host half.
+ * dsh-scope — host half.
  *
  * Registers one read-only, loopback-only endpoint on the web server:
- *   GET /api/context-lens/days — per-day token usage across every session
+ *   GET /api/dsh-scope/days — per-day token usage across every session
  *
  * The browser half consumes it for the GitHub-style usage heatmap. Usage
  * aggregation is INCREMENTAL: per-session fold state is cached in memory and
- * persisted to `<DSH_HOME>/storages/context-lens-cache.json`; each request
+ * persisted to `<DSH_HOME>/storages/dsh-scope-cache.json`; each request
  * folds only the events added since the last fold (live sessions fold their
  * in-memory tail; persisted sessions read the delta through the storage
  * backend's opaque revision when available). Steady-state cost stays
  * O(new events) no matter how large the logs grow.
  *
- * @module dsh-context-lens
+ * @module dsh-scope
  */
 
 import { homedir } from 'node:os'
@@ -21,12 +21,12 @@ import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
 import { applyUsageDelta, createUsageState, mergeInto, renderUsage } from './usage.js'
 
 /** Stable Cordis plugin name. */
-export const name = 'context-lens'
+export const name = 'dsh-scope'
 
 /** Services required before this plugin activates. */
 export const inject = ['webServer', 'sessions', 'sessionPersistence']
 
-const DAYS_PATH = '/api/context-lens/days'
+const DAYS_PATH = '/api/dsh-scope/days'
 const CACHE_VERSION = 1
 
 // ---------------------------------------------------------------- wire utils
@@ -71,7 +71,7 @@ function rejectForeignCaller(req, res) {
 /** Cache file location under the dsh home. */
 function cachePath() {
   const home = process.env.DSH_HOME ?? join(homedir(), '.dsh')
-  return join(home, 'storages', 'context-lens-cache.json')
+  return join(home, 'storages', 'dsh-scope-cache.json')
 }
 
 let loadedCache = null
@@ -164,7 +164,7 @@ async function saveCache(ctx, cache) {
     await writeFile(tmp, JSON.stringify(serialized), 'utf8')
     await rename(tmp, path)
   } catch (error) {
-    ctx.logger.warn(`context-lens: saving usage cache failed: ${String(error)}`)
+    ctx.logger.warn(`dsh-scope: saving usage cache failed: ${String(error)}`)
   }
 }
 
@@ -223,7 +223,7 @@ export async function collectUsage(ctx) {
         try {
           snapshots = await persistence.listSnapshots()
         } catch (error) {
-          ctx.logger.warn(`context-lens: listSnapshots failed, falling back to list(): ${String(error)}`)
+          ctx.logger.warn(`dsh-scope: listSnapshots failed, falling back to list(): ${String(error)}`)
         }
       }
       const metas = snapshots !== null ? snapshots.map((entry) => entry.header) : await persistence.list()
@@ -257,7 +257,7 @@ export async function collectUsage(ctx) {
             if (revision !== undefined) state.revision = revision
             else delete state.revision
           } catch (error) {
-            ctx.logger.warn(`context-lens: reading persisted session "${meta.id}" failed: ${String(error)}`)
+            ctx.logger.warn(`dsh-scope: reading persisted session "${meta.id}" failed: ${String(error)}`)
           }
         }
         cache.sessions[meta.id] = state
@@ -290,9 +290,9 @@ export function apply(ctx) {
       collectUsage(ctx)
         .then((result) => { json(res, 200, { ok: true, ...result }) })
         .catch((error) => {
-          ctx.logger.warn(`context-lens: usage aggregation failed: ${String(error)}`)
+          ctx.logger.warn(`dsh-scope: usage aggregation failed: ${String(error)}`)
           json(res, 500, { ok: false, error: 'internal', message: error instanceof Error ? error.message : String(error) })
         })
     },
-  }), 'context-lens: days route')
+  }), 'dsh-scope: days route')
 }

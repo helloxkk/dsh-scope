@@ -1,5 +1,5 @@
 /**
- * dsh-context-lens — pure per-day token-usage aggregation over session event
+ * dsh-scope — pure per-day token-usage aggregation over session event
  * logs. Cordis-free so it stays unit-testable against real logs outside the
  * running harness.
  *
@@ -14,7 +14,7 @@
  * a model ranking. Model attribution follows `assistant/message`'s
  * `data.message.source`, falling back to the last `request/header` config.
  *
- * @module dsh-context-lens/usage
+ * @module dsh-scope/usage
  */
 
 /** Local-calendar `YYYY-MM-DD` key for a millisecond epoch. */

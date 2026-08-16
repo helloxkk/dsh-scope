@@ -1,10 +1,17 @@
 {
-  "name": "dsh-context-lens",
-  "description": "Codex-style context visibility for DeepSeek Harness: live context-window occupancy, composition breakdown, and KV-cache hit rate for the current session",
+  "name": "dsh-scope",
+  "description": "Codex-style context visibility for DeepSeek Harness: live context-window occupancy, composition breakdown, KV-cache hit rate, and a GitHub-style 53-week usage heatmap",
   "version": "0.1.0",
-  "private": true,
   "type": "module",
   "main": "lib/index.js",
+  "files": [
+    "lib",
+    "cordis.patch.yml",
+    "scripts/install.mjs",
+    "README.md",
+    "README.zh.md",
+    "LICENSE"
+  ],
   "exports": {
     ".": "./lib/index.js",
     "./client": "./lib/client.js",
@@ -39,9 +46,15 @@
     "deepseek",
     "deepseek-harness",
     "dsh",
-    "context",
+    "dsh-plugin",
+    "context-window",
     "token-usage",
-    "dsh-plugin"
+    "usage-heatmap"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/helloxkk/dsh-scope.git"
+  },
+  "author": "Ken Xiao <helloxkk@users.noreply.github.com>"
 }

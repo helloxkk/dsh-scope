@@ -1,5 +1,5 @@
 /** Plugin identity used for the style tag and slot ids. */
-export const ID = 'dsh-context-lens'
+export const ID = 'dsh-scope'
 
 /**
  * All classes are `dcl-` prefixed (deepseek context lens) to stay collision

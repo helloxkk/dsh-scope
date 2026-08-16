@@ -1,5 +1,5 @@
 /**
- * dsh-context-lens — browser client half.
+ * dsh-scope — browser client half.
  *
  * Two UI contributions, one data flow each:
  *   1. `conversation.session.header.actions` (session scope) — ContextLens:
@@ -23,12 +23,12 @@ export const inject = ['slots', 'locale']
  */
 export function apply(ctx) {
   injectStyle()
-  ctx.effect(() => ctx.locale.register(NS, { zh, en }), 'context-lens: dictionaries')
+  ctx.effect(() => ctx.locale.register(NS, { zh, en }), 'dsh-scope: dictionaries')
   ctx.slots.inject(
     'conversation.session.header.actions',
     () => ctx.slots.register({
       name: 'conversation.session.header.actions',
-      id: 'context-lens',
+      id: 'dsh-scope',
       // After the job list (order 20): process work reads before context stats.
       order: 30,
       locale: NS,
@@ -38,7 +38,7 @@ export function apply(ctx) {
     'sidebar.footer.action',
     () => ctx.slots.register({
       name: 'sidebar.footer.action',
-      id: 'context-lens-heat',
+      id: 'dsh-scope-heat',
       locale: NS,
     }, UsageHeatmap),
   )

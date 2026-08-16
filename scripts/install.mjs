@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Install dsh-context-lens into a dsh profile: copy the package into the
+ * Install dsh-scope into a dsh profile: copy the package into the
  * profile's node_modules and append the bundle insert to the profile's
  * cordis.patch.yml (idempotent — safe to re-run).
  *
@@ -17,7 +17,7 @@ const pkgRoot = join(here, '..')
 const profile = process.argv[2] ?? 'web'
 const profileDir = join(homedir(), '.dsh', 'profiles', profile)
 const patchPath = join(profileDir, 'cordis.patch.yml')
-const target = join(profileDir, 'node_modules', 'dsh-context-lens')
+const target = join(profileDir, 'node_modules', 'dsh-scope')
 
 const pkg = JSON.parse(readFileSync(join(pkgRoot, 'package.json'), 'utf8'))
 
@@ -37,11 +37,11 @@ for (const entry of ['lib', 'cordis.patch.yml', 'package.json']) {
 }
 
 // 2. Add the patch entry exactly once (comment-preserving).
-const pluginLine = /^\s+name:\s*dsh-context-lens\s*$/gm
-const patchBlock = `# dsh-context-lens: context visibility + usage heatmap
+const pluginLine = /^\s+name:\s*dsh-scope\s*$/gm
+const patchBlock = `# dsh-scope: context visibility + usage heatmap
 - insert:
-    - id: context-lens
-      name: dsh-context-lens
+    - id: dsh-scope
+      name: dsh-scope
 `
 let patch = ''
 try { patch = readFileSync(patchPath, 'utf8') } catch { /* first run */ }
@@ -55,7 +55,7 @@ if ([...withoutEmptyRoot.matchAll(pluginLine)].length === 0) {
 
 const count = [...readFileSync(patchPath, 'utf8').matchAll(pluginLine)].length
 if (count !== 1) {
-  console.error(`expected exactly one dsh-context-lens entry in ${patchPath}; found ${count}`)
+  console.error(`expected exactly one dsh-scope entry in ${patchPath}; found ${count}`)
   process.exit(1)
 }
 

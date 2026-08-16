@@ -1,4 +1,7 @@
-# dsh-context-lens
+# dsh-scope
+
+[![dsh.so security](https://www.dsh.so/badges/dsh-scope.svg)](https://www.dsh.so/artifact/dsh-scope/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 [English](README.md) · **简体中文**
 
@@ -15,15 +18,15 @@
 
 ## 为什么做
 
-DeepSeek Harness 把措辞和上下文当一等工程对象，但自带 Web UI 既不显示 context 占用也没有用量历史。`dsh-context-lens` 按 harness 原生方式补上这两个缺口：读平台已经算好的投影、用平台的设计 token（`--dsw-alias-*`）、走平台的 slot 注册体系 —— 明暗主题零媒体查询都正确。
+DeepSeek Harness 把措辞和上下文当一等工程对象，但自带 Web UI 既不显示 context 占用也没有用量历史。`dsh-scope` 按 harness 原生方式补上这两个缺口：读平台已经算好的投影、用平台的设计 token（`--dsw-alias-*`）、走平台的 slot 注册体系 —— 明暗主题零媒体查询都正确。
 
 ## 安装
 
 需要 `dsh` ≥ `0.1.0-rc.6` 在 PATH 上。
 
 ```sh
-git clone https://github.com/helloxkk/dsh-context-lens.git
-cd dsh-context-lens
+git clone https://github.com/helloxkk/dsh-scope.git
+cd dsh-scope
 npm install && npm run build
 node scripts/install.mjs web        # 或: node scripts/install.mjs <profile>
 dsh web                             # 重启 dsh 加载插件
@@ -34,9 +37,9 @@ dsh web                             # 重启 dsh 加载插件
 ### 卸载
 
 ```sh
-rm -rf ~/.dsh/profiles/web/node_modules/dsh-context-lens
-# 再从 ~/.dsh/profiles/web/cordis.patch.yml 删掉 "# dsh-context-lens" 块
-rm -f ~/.dsh/storages/context-lens-cache.json   # 可选：清掉 fold 缓存
+rm -rf ~/.dsh/profiles/web/node_modules/dsh-scope
+# 再从 ~/.dsh/profiles/web/cordis.patch.yml 删掉 "# dsh-scope" 块
+rm -f ~/.dsh/storages/dsh-scope-cache.json   # 可选：清掉 fold 缓存
 ```
 
 ## 工作原理
@@ -44,9 +47,9 @@ rm -f ~/.dsh/storages/context-lens-cache.json   # 可选：清掉 fold 缓存
 **浏览器半**（`lib/client.js`，通过 package.json 的 `dsh.client` 声明被发现）：
 
 - `conversation.session.header.actions`（order 30，排在任务列表之后）渲染透镜触发器：占用率圆环 + 实时百分比。弹出面板读取三个官方投影 —— `tokenUsage`（整个持久日志累计的四桶）、`contextPressure`（输入侧窗口压力 + 路由的 context window）、`contextBreakdown`（下一次请求的 system/tools/message 启发式构成）。
-- `sidebar.footer.action` 渲染热力图触发器（侧栏展开显示文字，收起显示图标）。弹出面板同源 fetch `GET /api/context-lens/days`。
+- `sidebar.footer.action` 渲染热力图触发器（侧栏展开显示文字，收起显示图标）。弹出面板同源 fetch `GET /api/dsh-scope/days`。
 
-**宿主半**（`lib/index.js`）：一个只读、仅回环的端点。聚合是增量的：每会话 fold 状态缓存在内存并持久化到 `~/.dsh/storages/context-lens-cache.json`；每次请求只 fold 上次之后新增的事件。活跃会话 fold 内存尾部；持久会话用存储后端的不透明 revision 和 `readFrom(id, fromSeq)`，带连续性检查，日志被重写则全量重 fold。稳态成本 O(新增事件)，日志再大也不变慢。
+**宿主半**（`lib/index.js`）：一个只读、仅回环的端点。聚合是增量的：每会话 fold 状态缓存在内存并持久化到 `~/.dsh/storages/dsh-scope-cache.json`；每次请求只 fold 上次之后新增的事件。活跃会话 fold 内存尾部；持久会话用存储后端的不透明 revision 和 `readFrom(id, fromSeq)`，带连续性检查，日志被重写则全量重 fold。稳态成本 O(新增事件)，日志再大也不变慢。
 
 Fold 语义对齐 `dsh-token-meter` 的 `tokenUsage` 投影：usage 样本挂在 `assistant/chunk`（`data.chunk.type === "usage"`）或 `assistant/message`（`data.usage`）上；同一 (turn, step) 的重复样本替换旧值而非重复计数，并重新归因到后一事件所在的日期与模型。模型归因跟随 `assistant/message` 的 `data.message.source`，回退到最近的 `request/header` 配置。
 

@@ -1,6 +1,6 @@
 /**
  * UsageHeatmap — sidebar footer action: a GitHub-style 53-week token-usage
- * contribution grid fed by the host half's `/api/context-lens/days` endpoint.
+ * contribution grid fed by the host half's `/api/dsh-scope/days` endpoint.
  * Clicking a day pins a detail card (four token buckets, cache hit rate,
  * session count, model ranking). Differences from the single-month
  * alternatives: the full rolling year reads at a glance, colors ride the
@@ -9,7 +9,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
 
-const DAYS_PATH = '/api/context-lens/days'
+const DAYS_PATH = '/api/dsh-scope/days'
 const WEEKS = 53
 const MS_DAY = 86_400_000
 

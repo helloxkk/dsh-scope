@@ -1,5 +1,5 @@
 /**
- * tsdown build for dsh-context-lens.
+ * tsdown build for dsh-scope.
  *
  * Two artifacts from one command:
  *   1. lib/index.js  — ESM Node host half (deps externalized; resolved against
@@ -11,7 +11,7 @@
  *      inlined.
  */
 
-const ID = 'dsh-context-lens'
+const ID = 'dsh-scope'
 
 /** Module specifiers the harness shell shares into the frozen module table. */
 const PLATFORM_MODULES = [

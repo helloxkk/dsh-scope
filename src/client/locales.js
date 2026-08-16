@@ -75,4 +75,4 @@ export const en = {
 }
 
 /** Locale namespace owned by this plugin. */
-export const NS = 'context-lens'
+export const NS = 'dsh-scope'
