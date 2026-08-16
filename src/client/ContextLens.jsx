@@ -59,7 +59,11 @@ export function ContextLens({ useProjection, t }) {
   const crTok = usage?.cacheReadTokens ?? 0
   const cwTok = usage?.cacheWriteTokens ?? 0
   const outTok = usage?.outputTokens ?? 0
-  const hit = crTok + inTok > 0 ? (100 * crTok) / (crTok + inTok) : undefined
+  // Same formula as the heatmap's day detail (usage.js cacheHitRate): hits
+  // over the whole prompt side — uncached input + cache read + cache write —
+  // so both views agree on the number for the same underlying data.
+  const promptTok = inTok + crTok + cwTok
+  const hit = promptTok > 0 ? (100 * crTok) / promptTok : undefined
 
   const triggerLabel = usedPct !== undefined ? `${Math.round(usedPct)}%` : t('lens.title')
 
