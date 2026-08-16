@@ -25,12 +25,22 @@ DeepSeek Harness 把措辞和上下文当一等工程对象，但自带 Web UI �
 需要 `dsh` ≥ `0.1.0-rc.6` 在 PATH 上。
 
 ```sh
+dsh plugin --profile web add dsh-scope
+dsh web                             # 重启 dsh 加载插件
+```
+
+<details>
+<summary>从源码安装</summary>
+
+```sh
 git clone https://github.com/helloxkk/dsh-scope.git
 cd dsh-scope
 npm install && npm run build
 node scripts/install.mjs web        # 或: node scripts/install.mjs <profile>
 dsh web                             # 重启 dsh 加载插件
 ```
+
+</details>
 
 安装脚本把 `lib/`、`cordis.patch.yml`、`package.json` 复制进 profile 的 `node_modules`，并向 profile 的 `cordis.patch.yml` 追加 bundle insert（幂等，每次 rebuild 后可重复执行）。
 

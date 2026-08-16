@@ -25,12 +25,22 @@ DeepSeek Harness treats wording and context as first-class engineering concerns,
 Requires `dsh` ≥ `0.1.0-rc.6` on your PATH.
 
 ```sh
+dsh plugin --profile web add dsh-scope
+dsh web                             # restart dsh to load the plugin
+```
+
+<details>
+<summary>Install from source</summary>
+
+```sh
 git clone https://github.com/helloxkk/dsh-scope.git
 cd dsh-scope
 npm install && npm run build
 node scripts/install.mjs web        # or: node scripts/install.mjs <profile>
 dsh web                             # restart dsh to load the plugin
 ```
+
+</details>
 
 The installer copies `lib/`, `cordis.patch.yml`, and `package.json` into the profile's `node_modules` and appends the bundle insert to the profile's `cordis.patch.yml` (idempotent — safe to re-run after every rebuild).
 
