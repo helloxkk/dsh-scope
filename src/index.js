@@ -198,17 +198,19 @@ function resetFold(state) {
 export async function collectUsage(ctx) {
   return withLock(async () => {
     const cache = await loadCache()
+    let dirty = false
     const live = ctx.get('sessions')
     const attached = new Set()
     if (live !== undefined) {
       for (const session of live.list()) {
         attached.add(session.id)
         const state = cache.sessions[session.id] ?? createUsageState()
-        if (state.kind !== 'live') resetFold(state)
+        if (state.kind !== 'live') { resetFold(state); dirty = true }
         const count = session.events.length
         if ((state.consumed ?? 0) < count) {
           applyUsageDelta(state, session.events.slice(state.consumed ?? 0))
           state.consumed = count
+          dirty = true
         }
         state.kind = 'live'
         delete state.revision
@@ -262,6 +264,7 @@ export async function collectUsage(ctx) {
             state.kind = 'persisted'
             if (revision !== undefined) state.revision = revision
             else delete state.revision
+            dirty = true
           } catch (error) {
             ctx.logger.warn(`dsh-scope: reading persisted session "${meta.id}" failed: ${String(error)}`)
           }
@@ -270,11 +273,14 @@ export async function collectUsage(ctx) {
       }
     }
     for (const id of Object.keys(cache.sessions)) {
-      if (!attached.has(id) && !persistedIds.has(id)) delete cache.sessions[id]
+      if (!attached.has(id) && !persistedIds.has(id)) {
+        delete cache.sessions[id]
+        dirty = true
+      }
     }
     const byDay = new Map()
     for (const [id, state] of Object.entries(cache.sessions)) mergeInto(byDay, state.days, id)
-    await saveCache(ctx, cache)
+    if (dirty) await saveCache(ctx, cache)
     return renderUsage(byDay, Date.now())
   })
 }
