@@ -1,5 +1,7 @@
 # dsh-context-lens
 
+**English** · [简体中文](README.zh.md)
+
 **Context visibility for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`)** — a Codex-style `/context` lens for every session, plus a GitHub-style usage heatmap for your whole history.
 
 Two UI contributions, one plugin:
@@ -7,11 +9,9 @@ Two UI contributions, one plugin:
 1. **Context Lens** (session header) — live context-window occupancy with a segmented system / tools / messages composition bar, per-bucket session totals, and KV-cache hit rate. All data flows through the official `token-meter` session projections via `useProjection` — no RPC, no custom wire protocol.
 2. **Usage Heatmap** (sidebar footer) — a GitHub-contribution-graph-style rolling 53-week token-usage grid. Click any day for the four token buckets, cache hit rate, session count, and per-model ranking. Fed by this plugin's own loopback-only aggregation endpoint.
 
-中文说明见 [README.zh.md](README.zh.md)。
-
 ## Screenshots
 
-![usage heatmap](docs/heatmap.png)
+![usage heatmap](docs/heatmap-en.png)
 
 ## Why
 

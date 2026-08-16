@@ -1,5 +1,7 @@
 # dsh-context-lens
 
+[English](README.md) · **简体中文**
+
 **[DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（dsh）的上下文可视化插件** —— 每个会话的 Codex 式 `/context` 透镜 + 全历史的 GitHub 式用量热力图。
 
 一个插件，两处 UI：
@@ -7,11 +9,9 @@
 1. **Context Lens**（会话头部）—— 实时 context 窗口占用率（system / tools / messages 分段构成条）、四桶会话累计、KV 缓存命中率。数据全部来自官方 `token-meter` 会话投影（`useProjection`）—— 无 RPC、无自定义协议。
 2. **用量热力图**（侧边栏底部）—— GitHub 贡献图风格的滚动 53 周 token 用量网格。点击任意日期查看四桶明细、缓存命中率、会话数、模型排行。数据来自本插件自己的回环聚合端点。
 
-English readme: [README.md](README.md)。
-
 ## 截图
 
-![usage heatmap](docs/heatmap.png)
+![用量热力图](docs/heatmap-zh.png)
 
 ## 为什么做
 
