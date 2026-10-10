@@ -1,20 +1,18 @@
 /**
- * AppUsagePanel — the usage-statistics surface, a 1:1 port of ZCode's
- * 「使用统计 · 应用用量」 page (zai-org/ZCode, Apache-2.0; see NOTICE).
+ * AppUsagePanel — the usage-statistics surface.
  *
- * Layout, in ZCode's order:
- *   1. lifetime summary strip (tokens / peak / longest session / streaks)
- *   2. Token activity heatmap with daily | weekly | cumulative modes
- *   3. time-range switch (last 7d | last 30d)
- *   4. daily token trend, one line per model
- *   5. model usage donut with a percentage list
- *   6. a refresh button at the bottom right
+ * Reads one payload from the host half and renders, in order:
+ *   1. a lifetime summary strip
+ *   2. the rolling activity grid, in daily / weekly / cumulative modes
+ *   3. the window switch that drives the two charts below
+ *   4. a per-model daily trend
+ *   5. per-model shares as a donut with a ranked list
  *
- * Data comes from this plugin's own host endpoint, which already returns
- * per-day totals plus per-day per-model buckets, so every view derives from
- * one payload with no extra round trips.
+ * All derivation lives in `statsModel.js`; this file is presentation plus the
+ * single fetch. The refresh control is reported upward so the panel header
+ * can host it beside the title.
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   CartesianGrid,
   Cell,
@@ -28,7 +26,15 @@ import {
   YAxis,
 } from 'recharts'
 import {
-  chartColor,
+  HEATMAP_MODES,
+  RANGE_DAYS,
+  buildHeatmapColumns,
+  buildModelShares,
+  buildMonthSpans,
+  buildTrend,
+  buildWeeks,
+} from './statsModel.js'
+import {
   formatCompactTokens,
   formatDuration,
   formatFullDay,
@@ -39,157 +45,13 @@ import {
 } from './statsFormat.js'
 
 const DAYS_PATH = '/api/dsh-scope/days'
-const DAY_MS = 86_400_000
-/** ZCode shows a fixed 52-week window regardless of the selected range. */
-const HEATMAP_WEEKS = 52
-const HEATMAP_DAYS = 7
-const RANGES = ['7d', '30d']
-const MODES = ['daily', 'weekly', 'cumulative']
+const RANGES = Object.keys(RANGE_DAYS)
 
-/** UTC day index for a `YYYY-MM-DD` key, or null when unparseable. */
-function dayIndexOf(dateKey) {
-  const ms = Date.parse(`${dateKey}T00:00:00.000Z`)
-  return Number.isNaN(ms) ? null : Math.floor(ms / DAY_MS)
-}
-
-/** `YYYY-MM-DD` for a UTC day index. */
-function dateKeyOf(dayIndex) {
-  return new Date(dayIndex * DAY_MS).toISOString().slice(0, 10)
-}
-
-/** Five-step color bucket for a value against the window max. */
-function levelFor(value, max) {
-  if (value <= 0 || max <= 0) return 0
-  return Math.min(4, Math.max(1, Math.ceil((value / max) * 4)))
-}
-
-/**
- * Build the 52×7 grid, oldest column first, each column a Sunday-start week.
- * Days without a record are filled as zero cells so the grid never shrinks —
- * the same padding ZCode applies for short histories.
- */
-function buildWeeks(days) {
-  const byDate = new Map(days.map((day) => [day.date, day]))
-  const indices = days.map((day) => dayIndexOf(day.date)).filter((index) => index !== null)
-  if (indices.length === 0) return []
-  const endIndex = Math.max(...indices)
-  // Pad forward to the end of the current week so the newest column is whole.
-  const endWeekStart = endIndex - new Date(endIndex * DAY_MS).getUTCDay()
-  const startIndex = endWeekStart - (HEATMAP_WEEKS - 1) * HEATMAP_DAYS
-
-  return Array.from({ length: HEATMAP_WEEKS }, (_, week) => {
-    const cells = Array.from({ length: HEATMAP_DAYS }, (_, offset) => {
-      const index = startIndex + week * HEATMAP_DAYS + offset
-      const date = dateKeyOf(index)
-      const entry = byDate.get(date)
-      return {
-        date,
-        tokens: entry?.tokens ?? 0,
-        turns: entry?.turns ?? 0,
-        tools: entry?.tools ?? 0,
-        models: entry?.models ?? [],
-        sessions: entry?.sessions ?? 0,
-      }
-    })
-    // ZCode anchors a column's month label on the 1st when the week contains
-    // it, so the ruler reads as calendar months rather than week starts.
-    const firstOfMonth = cells.find((cell) => cell.date.endsWith('-01'))
-    return { cells, monthDate: firstOfMonth?.date ?? cells[0].date }
-  })
-}
-
-/** Rows for the last `rangeDays` days, oldest first, including empty days. */
-function buildTrendRows(days, rangeDays) {
-  const byDate = new Map(days.map((day) => [day.date, day]))
-  const indices = days.map((day) => dayIndexOf(day.date)).filter((index) => index !== null)
-  if (indices.length === 0) return { rows: [], models: [] }
-  const end = Math.max(...indices)
-  const rows = []
-  const totals = new Map()
-  for (let offset = rangeDays - 1; offset >= 0; offset -= 1) {
-    const index = end - offset
-    const date = dateKeyOf(index)
-    const entry = byDate.get(date)
-    // Only models used inside the window appear as series.
-    for (const model of entry?.models ?? []) {
-      totals.set(model.model, (totals.get(model.model) ?? 0) + model.tokens)
-    }
-    rows.push({ date, entry })
-  }
-  const models = [...totals.entries()].sort((a, b) => b[1] - a[1]).map(([model]) => model)
-  const data = rows.map(({ date, entry }) => {
-    const row = { date, label: formatShortDay('en-US', date) }
-    let sum = 0
-    for (const model of models) {
-      const tokens = entry?.models.find((m) => m.model === model)?.tokens ?? 0
-      row[model] = tokens
-      sum += tokens
-    }
-    row.total = sum
-    return row
-  })
-  return { rows: data, models }
-}
-
-/** Aggregate a window of days into per-model totals for the donut. */
-function buildModelTotals(days, rangeDays) {
-  const indices = days.map((day) => dayIndexOf(day.date)).filter((index) => index !== null)
-  if (indices.length === 0) return { slices: [], total: 0 }
-  const end = Math.max(...indices)
-  const cutoff = end - rangeDays + 1
-  const totals = new Map()
-  for (const day of days) {
-    const index = dayIndexOf(day.date)
-    if (index === null || index < cutoff || index > end) continue
-    for (const model of day.models ?? []) {
-      totals.set(model.model, (totals.get(model.model) ?? 0) + model.tokens)
-    }
-  }
-  const total = [...totals.values()].reduce((sum, value) => sum + value, 0)
-  const slices = [...totals.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .map(([model, tokens], index) => ({
-      model,
-      tokens,
-      share: total > 0 ? tokens / total : 0,
-      color: chartColor(index),
-    }))
-  return { slices, total }
-}
-
-/** Tooltip body for the trend chart: one row per visible model series. */
-function ChartTip({ active, payload, label, locale }) {
-  if (!active || !payload?.length) return null
-  const rows = payload.filter((item) => Number(item.value) > 0)
-  if (rows.length === 0) return null
-  return (
-    <div className="dcl-tip">
-      <div className="dcl-tip-label">{label}</div>
-      {rows.map((item) => (
-        <div className="dcl-tip-row" key={item.dataKey ?? item.name}>
-          <span className="dcl-tip-name">
-            <span className="dcl-tip-dot" style={{ background: item.color ?? item.stroke }} />
-            {item.name}
-          </span>
-          <span className="dcl-tip-val">{formatCompactTokens(locale, Number(item.value))}</span>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-/**
- * @param props - `t`/`locale` from the slot runtime, plus `onRefreshState`
- *   which reports `{ loading, refresh }` to the owning header so it can host
- *   the refresh control.
- */
-export function AppUsagePanel({ t, locale, onRefreshState }) {
+/** Fetch the aggregated payload once per open panel; `load` re-runs it. */
+function useUsageData() {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [range, setRange] = useState('7d')
-  const [mode, setMode] = useState('daily')
-  const [hovered, setHovered] = useState(null)
 
   const load = useCallback(() => {
     setLoading(true)
@@ -211,58 +73,36 @@ export function AppUsagePanel({ t, locale, onRefreshState }) {
   }, [])
 
   useEffect(() => { load() }, [load])
+  return { data, loading, error, load }
+}
 
-  // Hand the refresh control up to the panel header, which owns the title row.
+/**
+ * @param props - `t` and `locale` from the slot runtime, plus `onRefreshState`
+ *   which reports `{ loading, refresh }` so the header can render the control.
+ */
+export function AppUsagePanel({ t, locale, onRefreshState }) {
+  const { data, loading, error, load } = useUsageData()
+  const [range, setRange] = useState('7d')
+  const [mode, setMode] = useState('daily')
+
   useEffect(() => {
-    if (onRefreshState === undefined) return
-    onRefreshState({ loading, refresh: load })
+    onRefreshState?.({ loading, refresh: load })
   }, [onRefreshState, loading, load])
 
   const days = data?.days ?? []
   const summary = data?.summary
+  const rangeDays = RANGE_DAYS[range]
+
   const weeks = useMemo(() => buildWeeks(days), [days])
-  const rangeDays = range === '7d' ? 7 : 30
-  const trend = useMemo(() => buildTrendRows(days, rangeDays), [days, rangeDays])
-  const donut = useMemo(() => buildModelTotals(days, rangeDays), [days, rangeDays])
-
-  // Heatmap values per mode. Weekly sums each column; cumulative runs a
-  // total across columns; daily keeps per-cell values (ZCode's semantics).
-  const heatmap = useMemo(() => {
-    if (weeks.length === 0) return { columns: [], max: 0 }
-    const weekly = weeks.map((week) => week.cells.reduce((sum, cell) => sum + cell.tokens, 0))
-    let running = 0
-    const cumulative = weekly.map((value) => (running += value))
-    const values = mode === 'weekly' ? weekly : mode === 'cumulative' ? cumulative : null
-    const max = values === null
-      ? Math.max(0, ...weeks.flatMap((week) => week.cells.map((cell) => cell.tokens)))
-      : Math.max(0, ...values)
-
-    const columns = weeks.map((week, index) => {
-      const value = values === null ? 0 : values[index]
-      const level = values === null ? 0 : levelFor(value, max)
-      // Weekly/cumulative fills the column bottom-up so the bar height reads
-      // as magnitude; daily colors each cell on its own value.
-      const filledRows = values === null ? 0 : value <= 0 || max <= 0 ? 0 : Math.min(HEATMAP_DAYS, Math.max(1, Math.ceil((value / max) * HEATMAP_DAYS)))
-      return {
-        key: `w-${index}`,
-        monthDate: week.monthDate,
-        value,
-        level,
-        filledRows,
-        cells: week.cells.map((cell, rowIndex) => ({
-          ...cell,
-          level: values === null ? levelFor(cell.tokens, max) : rowIndex >= HEATMAP_DAYS - filledRows ? level : 0,
-        })),
-      }
-    })
-    return { columns, max }
-  }, [weeks, mode])
-
+  const grid = useMemo(() => buildHeatmapColumns(weeks, mode), [weeks, mode])
+  const months = useMemo(() => buildMonthSpans(grid.columns, (date) => formatMonth(locale, date)), [grid.columns, locale])
+  const trend = useMemo(() => buildTrend(days, rangeDays), [days, rangeDays])
+  const donut = useMemo(() => buildModelShares(days, rangeDays), [days, rangeDays])
   const hasUsage = days.some((day) => day.tokens > 0)
 
   if (loading && data === null) {
     return (
-      <div className="dcl-stats" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div className="dcl-stats">
         <SummaryStrip t={t} locale={locale} summary={null} />
         <EmptyState title={t('stats.loadingTitle')} description={t('stats.loadingDescription')} />
       </div>
@@ -270,7 +110,7 @@ export function AppUsagePanel({ t, locale, onRefreshState }) {
   }
 
   return (
-    <div className="dcl-stats" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+    <div className="dcl-stats">
       <SummaryStrip t={t} locale={locale} summary={summary} />
 
       {error !== null ? (
@@ -280,47 +120,27 @@ export function AppUsagePanel({ t, locale, onRefreshState }) {
         </div>
       ) : null}
 
-      {hasUsage && heatmap.columns.length > 0 ? (
+      {hasUsage && grid.columns.length > 0 ? (
         <section className="dcl-sectioncard">
-          <div className="dcl-sectionhead">
-            <div className="dcl-sectiontitle">{t('stats.tokenActivity')}</div>
-            <div className="dcl-tabs" role="tablist">
-              {MODES.map((option) => (
-                <button
-                  key={option}
-                  type="button"
-                  role="tab"
-                  aria-selected={mode === option}
-                  className="dcl-tab"
-                  data-active={mode === option ? '' : undefined}
-                  onClick={() => setMode(option)}
-                >
-                  {t(`stats.mode${option[0].toUpperCase()}${option.slice(1)}`)}
-                </button>
-              ))}
-            </div>
-          </div>
-          <Heatmap t={t} locale={locale} columns={heatmap.columns} mode={mode} hovered={hovered} onHover={setHovered} />
+          <SectionHead
+            title={t('stats.tokenActivity')}
+            options={HEATMAP_MODES}
+            value={mode}
+            onChange={setMode}
+            labelOf={(option) => t(`stats.mode${option[0].toUpperCase()}${option.slice(1)}`)}
+          />
+          <ActivityGrid t={t} locale={locale} columns={grid.columns} months={months} mode={mode} />
         </section>
       ) : null}
 
       <div className="dcl-sectionhead">
         <div className="dcl-sectiontitle">{t('stats.rangeTitle')}</div>
-        <div className="dcl-tabs" role="tablist">
-          {RANGES.map((option) => (
-            <button
-              key={option}
-              type="button"
-              role="tab"
-              aria-selected={range === option}
-              className="dcl-tab"
-              data-active={range === option ? '' : undefined}
-              onClick={() => setRange(option)}
-            >
-              {t(`stats.range${option}`)}
-            </button>
-          ))}
-        </div>
+        <Tabs
+          options={RANGES}
+          value={range}
+          onChange={setRange}
+          labelOf={(option) => t(`stats.range${option}`)}
+        />
       </div>
 
       {!hasUsage ? (
@@ -337,12 +157,11 @@ export function AppUsagePanel({ t, locale, onRefreshState }) {
           </section>
         </>
       )}
-
     </div>
   )
 }
 
-/** Header refresh control: reports its state up so the panel header can host it. */
+/** Header refresh control; the panel header owns its placement. */
 export function RefreshButton({ t, loading, onClick }) {
   return (
     <button
@@ -359,7 +178,38 @@ export function RefreshButton({ t, loading, onClick }) {
   )
 }
 
-/** Lifetime summary strip: five centered metrics separated by hairlines. */
+/** Segmented control used for both the mode and range switches. */
+function Tabs({ options, value, onChange, labelOf }) {
+  return (
+    <div className="dcl-tabs" role="tablist">
+      {options.map((option) => (
+        <button
+          key={option}
+          type="button"
+          role="tab"
+          aria-selected={value === option}
+          className="dcl-tab"
+          data-active={value === option ? '' : undefined}
+          onClick={() => onChange(option)}
+        >
+          {labelOf(option)}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+/** Section title with an optional trailing control. */
+function SectionHead({ title, options, value, onChange, labelOf }) {
+  return (
+    <div className="dcl-sectionhead">
+      <div className="dcl-sectiontitle">{title}</div>
+      {options ? <Tabs options={options} value={value} onChange={onChange} labelOf={labelOf} /> : null}
+    </div>
+  )
+}
+
+/** Five lifetime metrics separated by hairlines. */
 function SummaryStrip({ t, locale, summary }) {
   const items = [
     { key: 'stats.lifetimeTotal', value: summary ? formatSummaryTokens(locale, summary.totalTokens) : '--' },
@@ -371,7 +221,7 @@ function SummaryStrip({ t, locale, summary }) {
   return (
     <section className="dcl-summary">
       {items.map((item, index) => (
-        <div key={item.key} style={{ display: 'contents' }}>
+        <div key={item.key} className="dcl-summary-cell">
           {index > 0 ? <div className="dcl-summary-div" aria-hidden="true" /> : null}
           <div className="dcl-summary-item">
             <div className="dcl-summary-value" title={item.value}>{item.value}</div>
@@ -392,30 +242,18 @@ function EmptyState({ title, description }) {
   )
 }
 
-/** 52-week grid. Cells are aspect-square on a 1fr track so the year always fits. */
-function Heatmap({ t, locale, columns, mode, hovered, onHover }) {
+/**
+ * The activity grid. Cells are square and share the row width, so the whole
+ * window always fits without a second horizontal scrollbar inside the popover.
+ */
+function ActivityGrid({ t, locale, columns, months, mode }) {
   const [selected, setSelected] = useState(null)
-  const monthRowRef = useRef(null)
 
-  // One month label per month, spanning the columns it covers.
-  const months = useMemo(() => {
-    const out = []
-    for (const column of columns) {
-      const label = formatMonth(locale, column.monthDate)
-      const last = out[out.length - 1]
-      if (last !== undefined && last.label === label) last.span += 1
-      else out.push({ key: column.monthDate, label, span: 1 })
-    }
-    // Leading partial month reads better as a blank than a clipped label.
-    return out
-  }, [columns, locale])
-
-  const tooltip = (column, cell) => {
+  const cellTitle = (column, cell) => {
     if (mode !== 'daily') {
-      const id = mode === 'weekly' ? 'stats.heatmapWeeklyCell' : 'stats.heatmapCumulativeCell'
-      return t(id, {
+      return t(mode === 'weekly' ? 'stats.heatmapWeeklyCell' : 'stats.heatmapCumulativeCell', {
         date: formatFullDay(locale, column.monthDate),
-        tokens: formatCompactTokens(locale, column.value),
+        tokens: formatCompactTokens(locale, column.tokens),
         turns: formatCompactTokens(locale, column.turns),
         tools: formatCompactTokens(locale, column.tools),
       })
@@ -430,13 +268,10 @@ function Heatmap({ t, locale, columns, mode, hovered, onHover }) {
 
   return (
     <div className="dcl-hm">
-      <div
-        className="dcl-hm-months"
-        ref={monthRowRef}
-        style={{ gridTemplateColumns: `repeat(${columns.length},minmax(0,1fr))` }}
-      >
+      <div className="dcl-hm-months" style={{ gridTemplateColumns: `repeat(${columns.length},minmax(0,1fr))` }}>
         {months.map((month) => (
           <div key={month.key} className="dcl-hm-month" style={{ gridColumn: `span ${month.span}` }}>
+            {/* A single-column month has no room for a label; skip it rather than clip. */}
             {month.span >= 2 ? month.label : ''}
           </div>
         ))}
@@ -454,12 +289,7 @@ function Heatmap({ t, locale, columns, mode, hovered, onHover }) {
           aria-label={t('heat.gridLabel')}
         >
           {columns.map((column) => (
-            <div
-              key={column.key}
-              className="dcl-hm-col"
-              onMouseEnter={() => onHover(column.key)}
-              onMouseLeave={() => onHover(null)}
-            >
+            <div key={column.key} className="dcl-hm-col">
               {column.cells.map((cell) => (
                 <button
                   key={cell.date}
@@ -467,7 +297,8 @@ function Heatmap({ t, locale, columns, mode, hovered, onHover }) {
                   className={`dcl-hm-cell dcl-hm-l${cell.level}`}
                   data-has-usage={cell.tokens > 0 ? '' : undefined}
                   data-selected={selected === cell.date ? '' : undefined}
-                  title={tooltip(column, cell)}
+                  title={cellTitle(column, cell)}
+                  aria-label={cellTitle(column, cell)}
                   onClick={() => setSelected(selected === cell.date ? null : cell.date)}
                 />
               ))}
@@ -479,21 +310,42 @@ function Heatmap({ t, locale, columns, mode, hovered, onHover }) {
   )
 }
 
-/** Daily token trend: one line per model, with a wrapping legend. */
+/** Tooltip body for the trend chart: one row per model with a non-zero value. */
+function TrendTip({ active, payload, label, locale }) {
+  if (!active || !payload?.length) return null
+  const rows = payload.filter((item) => Number(item.value) > 0)
+  if (rows.length === 0) return null
+  return (
+    <div className="dcl-tip">
+      <div className="dcl-tip-label">{label}</div>
+      {rows.map((item) => (
+        <div className="dcl-tip-row" key={item.dataKey ?? item.name}>
+          <span className="dcl-tip-name">
+            <span className="dcl-tip-dot" style={{ background: item.color ?? item.stroke }} />
+            {item.name}
+          </span>
+          <span className="dcl-tip-val">{formatCompactTokens(locale, Number(item.value))}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/** Daily token trend, one line per model, with a legend that wraps. */
 function TrendChart({ t, locale, rows, models }) {
   if (rows.length === 0 || models.length === 0) {
     return <EmptyState title={t('stats.emptyTitle')} description={t('stats.emptyDescription')} />
   }
-  const label = (date) => formatShortDay(locale, date)
-  const data = rows.map((row) => ({ ...row, label: label(row.date) }))
-  // Keep the axis readable on a 30-day window the way ZCode does.
+  const data = rows.map((row) => ({ ...row, label: formatShortDay(locale, row.date) }))
+  // Thin the axis labels as the window grows so they never collide.
   const interval = data.length <= 14 ? 0 : data.length > 45 ? 6 : 4
+
   return (
     <>
       <div className="dcl-legend">
         {models.map((model, index) => (
           <span className="dcl-legend-item" key={model}>
-            <span className="dcl-legend-dot" style={{ background: chartColor(index) }} />
+            <span className="dcl-legend-dot" style={{ background: `var(--dcl-chart-${(index % 6) + 1})` }} />
             <span className="dcl-legend-text" title={model}>{model}</span>
           </span>
         ))}
@@ -504,14 +356,14 @@ function TrendChart({ t, locale, rows, models }) {
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
             <XAxis dataKey="label" tickLine={false} axisLine={false} interval={interval} minTickGap={4} />
             <YAxis tickLine={false} axisLine={false} width={48} tickFormatter={(value) => formatCompactTokens(locale, value)} />
-            <Tooltip content={<ChartTip locale={locale} t={t} />} />
+            <Tooltip content={<TrendTip locale={locale} />} />
             {models.map((model, index) => (
               <Line
                 key={model}
                 type="monotone"
                 dataKey={model}
                 name={model}
-                stroke={chartColor(index)}
+                stroke={`var(--dcl-chart-${(index % 6) + 1})`}
                 strokeWidth={2}
                 dot={false}
                 activeDot={{ r: 3 }}
@@ -524,7 +376,7 @@ function TrendChart({ t, locale, rows, models }) {
   )
 }
 
-/** Model usage donut with a percentage list beside it. */
+/** Share donut with the window total in the middle and a ranked list beside it. */
 function ModelDonut({ t, locale, slices, total }) {
   if (total <= 0 || slices.length === 0) {
     return <EmptyState title={t('stats.emptyTitle')} description={t('stats.emptyDescription')} />
@@ -544,9 +396,7 @@ function ModelDonut({ t, locale, slices, total }) {
               stroke="var(--dsw-alias-bg-base)"
               strokeWidth={2}
             >
-              {slices.map((slice) => (
-                <Cell key={slice.model} fill={slice.color} />
-              ))}
+              {slices.map((slice) => <Cell key={slice.model} fill={slice.color} />)}
             </Pie>
             <Tooltip
               content={({ active, payload }) => {

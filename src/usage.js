@@ -230,9 +230,9 @@ export function mergeInto(byDay, days, sessionId) {
 }
 
 /**
- * Summary statistics across the whole history, mirroring ZCode's lifetime
- * strip: cumulative tokens, the best single day, the longest session, and
- * both streak lengths over the set of days that saw usage.
+ * Summary statistics across the whole history: cumulative tokens, the best
+ * single day, the longest session, and both streak lengths over the set of
+ * days that saw usage.
  *
  * @param byDay - merged day map (day → entry).
  * @param sessionSpans - per-session `{ id, startMs, endMs }` spans.

@@ -113,13 +113,11 @@ dsh imports each plugin module once at startup, so a profile config reload canno
 
 ## Credits
 
-The usage-statistics panel is a port of ZCode's 「应用用量」 surface
-([zai-org/ZCode](https://github.com/zai-org/ZCode), Apache-2.0). Layout, the
-heatmap's modes and month-ruler alignment, and the shared number and date
-formatting follow upstream; the Tailwind classes, types, i18n layer, and chart
-palette are replaced with this plugin's own CSS, plain JavaScript and the DSH
-theme aliases. Charts render with [Recharts](https://github.com/recharts/recharts) (MIT).
-See [NOTICE.md](NOTICE.md) for details.
+Charts render with [Recharts](https://github.com/recharts/recharts) (MIT).
+
+This package includes code derived from a third-party Apache-2.0 project.
+Required attribution and the list of derived files are in
+[NOTICE.md](NOTICE.md).
 
 ## License
 

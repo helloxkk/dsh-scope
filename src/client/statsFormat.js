@@ -1,10 +1,10 @@
 /**
- * Formatting helpers for the usage-stats panel.
+ * Formatting helpers for the usage panel.
  *
- * Ported from ZCode (`packages/ui/src/settings/usage-stats/usageStatsUiParts.tsx`
- * and `packages/ui/src/lib/tokenNumberFormat.ts`, Apache-2.0) and reduced to
- * what this plugin renders. The locale argument drives Intl, so zh renders
- * 万/亿 while en renders K/M/B — matching ZCode's behavior.
+ * Everything routes through `Intl`, so zh renders 万/亿 and en renders K/M/B
+ * from the same call — no per-locale string tables to keep in sync.
+ *
+ * @module dsh-scope/statsFormat
  */
 
 /** Compact number via Intl (`1.2万` / `12.3K`), em dash when not finite. */
@@ -76,7 +76,7 @@ export function formatDuration(t, durationMs) {
   return parts.join(' ')
 }
 
-/** Six-series palette. Indexes wrap, matching ZCode's palette helper. */
+/** Six-series palette token for a series index; wraps past six. */
 export function chartColor(index) {
   return `var(--dcl-chart-${(index % 6) + 1})`
 }

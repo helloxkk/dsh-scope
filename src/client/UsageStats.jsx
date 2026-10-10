@@ -1,9 +1,10 @@
 /**
- * UsageHeatmap — sidebar footer action.
+ * UsageStats — sidebar footer action.
  *
- * The trigger (badge when the sidebar is wide, icon on the rail) opens the
- * usage-statistics panel ported from ZCode; see `AppUsagePanel`. The panel
- * owns its own data loading, range/mode state, and refresh.
+ * The trigger (a badge when the sidebar is wide, an icon on the rail) opens
+ * the usage panel; see `AppUsagePanel`. This file owns only the trigger, the
+ * outside-click dismissal, and pushing the panel's refresh control into the
+ * header. The panel owns its own loading, range and mode state.
  */
 import { useEffect, useRef, useState } from 'react'
 import { AppUsagePanel, RefreshButton } from './AppUsagePanel.jsx'
@@ -11,7 +12,7 @@ import { AppUsagePanel, RefreshButton } from './AppUsagePanel.jsx'
 /**
  * @param props - `wide` from the sidebar shell + `t` from the slot runtime.
  */
-export function UsageHeatmap({ wide, t }) {
+export function UsageStats({ wide, t }) {
   const [open, setOpen] = useState(false)
   // The panel reports its refresh control up so the header can host it.
   const [refresh, setRefresh] = useState(null)

@@ -102,14 +102,16 @@ export const CSS = `
 .dcl-modelrow{display:flex;justify-content:space-between;gap:8px;font-size:11px;line-height:16px}
 .dcl-modelname{color:var(--dsw-alias-label-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--dsw-font-mono,ui-monospace,monospace)}
 
-/* ---- usage stats panel (ported from ZCode's 「应用用量」) ---- */
-/* Six model series colors. ZCode rides its own --color-usage-chart-* tokens;
-   DSH has no such palette, so these are mixed from the design-platform
-   aliases so light/dark stay correct without media queries. */
+/* ---- usage stats panel ---- */
+/* Six model series colors, mixed from the design-platform aliases so light
+   and dark both stay correct without a media query or a second palette. */
 .dcl-stats{--dcl-chart-1:var(--dsw-alias-state-business-primary);--dcl-chart-2:var(--dsw-alias-state-success-primary);--dcl-chart-3:color-mix(in srgb,var(--dsw-alias-state-business-primary) 55%,var(--dsw-alias-state-success-primary));--dcl-chart-4:var(--dsw-alias-state-error-primary);--dcl-chart-5:var(--dsw-alias-state-warn-primary);--dcl-chart-6:var(--dsw-alias-label-tertiary)}
 
 .dcl-summary{display:flex;align-items:stretch;border-radius:10px;background:var(--dsw-alias-fill-l1,var(--dsw-alias-interactive-bg-hover));overflow:hidden}
-.dcl-summary-item{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:2px;padding:9px 6px}
+/* Each cell owns its leading hairline, so the divider count always matches
+   the metric count without the caller interleaving separators. */
+.dcl-summary-cell{display:flex;align-items:stretch;flex:1;min-width:0}
+.dcl-summary-item{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:9px 6px}
 .dcl-summary-div{width:1px;background:var(--dsw-alias-border-l2);margin:8px 0;flex:none}
 .dcl-summary-value{color:var(--dsw-alias-label-primary);font-size:14px;font-weight:600;line-height:19px;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .dcl-summary-label{color:var(--dsw-alias-label-tertiary);font-size:10px;line-height:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
@@ -123,8 +125,8 @@ export const CSS = `
 .dcl-tab:hover{color:var(--dsw-alias-label-secondary)}
 .dcl-tab[data-active]{background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font-weight:500;box-shadow:var(--dsw-shadow-lv1,0 1px 2px rgba(0,0,0,.08))}
 
-/* ZCode's grid uses aspect-square cells on a 1fr column track so the whole
-   year always fits one width; same approach here. */
+/* Square cells on a 1fr column track, so the whole year always fits the
+   popover width instead of introducing a second horizontal scrollbar. */
 .dcl-hm{display:flex;flex-direction:column;gap:4px}
 .dcl-hm-months{display:grid;gap:3px;height:13px;margin-left:22px}
 .dcl-hm-month{font-size:9px;line-height:13px;color:var(--dsw-alias-label-caption);white-space:nowrap;overflow:visible}
@@ -150,7 +152,8 @@ export const CSS = `
 .dcl-legend-dot{width:7px;height:7px;border-radius:50%;flex:none}
 .dcl-legend-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
-/* Donut: chart and legend side by side, mirroring ZCode's md:grid-cols-2. */
+/* Donut beside a ranked list; the list keeps its own column so long model
+   names truncate instead of reflowing the chart. */
 .dcl-donut{display:grid;grid-template-columns:minmax(0,150px) minmax(0,1fr);gap:10px;align-items:center}
 .dcl-donut-wrap{position:relative;width:100%;height:150px}
 .dcl-donut-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;pointer-events:none;text-align:center;padding:0 18px}

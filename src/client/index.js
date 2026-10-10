@@ -5,11 +5,11 @@
  *   1. `conversation.session.header.actions` (session scope) — ContextLens:
  *      live window occupancy, composition, and session totals straight from
  *      the official token-meter projections via `useProjection` (no RPC).
- *   2. `sidebar.footer.action` (root scope) — UsageHeatmap: the GitHub-style
- *      53-week usage grid fed by this plugin's host half endpoint.
+ *   2. `sidebar.footer.action` (root scope) — UsageStats: the lifetime usage
+ *      dashboard, fed by this plugin's own host-half endpoint.
  */
 import { ContextLens } from './ContextLens.jsx'
-import { UsageHeatmap } from './UsageHeatmap.jsx'
+import { UsageStats } from './UsageStats.jsx'
 import { en, zh, NS } from './locales.js'
 import { CSS, ID } from './style.js'
 
@@ -40,7 +40,7 @@ export function apply(ctx) {
       name: 'sidebar.footer.action',
       id: 'dsh-scope-heat',
       locale: NS,
-    }, UsageHeatmap),
+    }, UsageStats),
   )
 }
 

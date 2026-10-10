@@ -38,7 +38,7 @@ export const zh = {
   'heat.noData': '{date} 无用量记录',
   'heat.updated': '更新于 {time}',
 
-  // ---- usage stats panel (ported from ZCode's 「应用用量」) ----
+  // ---- usage statistics panel ----
   'stats.title': '使用统计',
   'stats.lifetimeTotal': '累计 Token 数',
   'stats.lifetimePeak': '峰值 Token 数',
@@ -108,7 +108,7 @@ export const en = {
   'heat.noData': 'No usage recorded on {date}',
   'heat.updated': 'Updated {time}',
 
-  // ---- usage stats panel (ported from ZCode's "App Usage") ----
+  // ---- usage statistics panel ----
   'stats.title': 'Usage',
   'stats.lifetimeTotal': 'Lifetime tokens',
   'stats.lifetimePeak': 'Peak tokens',
