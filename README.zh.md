@@ -11,6 +11,9 @@
 
 DeepSeek Harness 算了大量 token 账，却一点都不给你看。`dsh-scope` 把它呈现在两处。
 
+> 本文是 [`deepseek-harness/`](https://github.com/helloxkk) 下若干 dsh 插件之一，
+> 每个插件独立仓库、独立发版。
+
 ![使用统计面板](docs/panel-zh.png)
 
 ## 功能

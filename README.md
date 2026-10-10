@@ -11,6 +11,10 @@
 
 DeepSeek Harness computes rich token accounting and then shows you none of it. `dsh-scope` surfaces it in two places.
 
+> One of several `dsh` plugins developed under
+> [`deepseek-harness/`](https://github.com/helloxkk) — each an independent
+> repo with its own release cadence.
+
 ![usage statistics panel](docs/panel-zh.png)
 
 ## Features
