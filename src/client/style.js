@@ -280,10 +280,12 @@ export const CSS = `
 /* Header variant: shorter, borderless chrome that reads as a title-row action. */
 .dcl-refresh-head{height:24px;padding:0 8px;border-color:transparent;background:transparent;font-size:11px;gap:4px}
 .dcl-refresh-head:hover{background:var(--dsw-alias-interactive-bg-hover)}
-.dcl-refresh-head[disabled] svg{animation:dcl-spin 900ms linear infinite}
+/* The spinning icon is the entire progress signal: the label stays put so the
+   header row never reflows mid-request. */
+.dcl-refresh-head[aria-busy] svg{animation:dcl-spin 900ms linear infinite}
 @keyframes dcl-spin{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){
-  .dcl-refresh-head[disabled] svg{animation:none}
+  .dcl-refresh-head[aria-busy] svg{animation:none;opacity:.5}
   .dcl-tab:active,.dcl-refresh:active{transform:none}
   .dcl-hm-cell{transition:none}
   .dcl-hm-cell:hover{transform:none}

@@ -171,9 +171,12 @@ export function RefreshButton({ t, loading, onClick }) {
       disabled={loading}
       title={t('heat.refresh')}
       aria-label={t('heat.refresh')}
+      // The label never changes on click — the spinning icon is the whole
+      // progress signal, so the button keeps its width and the row stays put.
+      aria-busy={loading || undefined}
     >
       <RefreshIcon />
-      {loading ? t('heat.loading') : t('heat.refresh')}
+      {t('heat.refresh')}
     </button>
   )
 }
