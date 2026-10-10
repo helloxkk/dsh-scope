@@ -64,6 +64,13 @@ export const zh = {
   'balance.unavailableTitle': '当前环境不支持余额查询',
   'balance.unavailableDesc': '该 profile 未挂载 DeepSeek 账号插件。',
   'balance.note': '余额来自 DeepSeek 平台，仅供查看。',
+  'balance.orderHint': '消费时优先扣减赠送余额，再扣现金余额。',
+  'balance.grantsTitle': '赠金',
+  'balance.grantsNote': '仅列出平台尚未确认的赠金；已确认过的请到平台查看。',
+  'balance.expired': '已过期',
+  'balance.expiresToday': '今天过期',
+  'balance.expiresSoon': '{n} 天后过期',
+  'balance.expiresIn': '{n} 天后过期',
 }
 
 /** en dictionary. */
@@ -132,6 +139,13 @@ export const en = {
   'balance.unavailableTitle': 'Balance is unavailable here',
   'balance.unavailableDesc': 'This profile does not mount the DeepSeek account plugin.',
   'balance.note': 'Read from the DeepSeek platform; view only.',
+  'balance.orderHint': 'Bonus balance is spent before cash.',
+  'balance.grantsTitle': 'Bonus grants',
+  'balance.grantsNote': 'Only grants the platform has not yet acknowledged are listed; check the platform for the rest.',
+  'balance.expired': 'Expired',
+  'balance.expiresToday': 'Expires today',
+  'balance.expiresSoon': 'Expires in {n}d',
+  'balance.expiresIn': 'Expires in {n} days',
 }
 
 /** Locale namespace owned by this plugin. */

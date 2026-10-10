@@ -64,6 +64,12 @@ export function BalancePanel({ t, locale, onRefreshState }) {
     )
   }
 
+  // Unacknowledged bonus grants from the platform, each with its expiry. The
+  // summary endpoint cannot provide this, so it arrives separately and may be
+  // absent — grants the user has already acknowledged on the platform are not
+  // in the list, which is the platform's behaviour, not a failure here.
+  const grants = Array.isArray(data?.bonusGrants) ? data.bonusGrants : null
+
   return (
     <div className="dcl-stats">
       <section className="dcl-card">
@@ -88,10 +94,58 @@ export function BalancePanel({ t, locale, onRefreshState }) {
           </div>
         )}
 
+        {/* Deduction order. It is what decides whether the bonus balance is
+            worth watching: it is spent first, so it goes before the cash. */}
+        <div className="dcl-orderhint">{t('balance.orderHint')}</div>
+
+        {grants !== null && grants.length > 0 && (
+          <div className="dcl-grants">
+            <div className="dcl-grants-title">{t('balance.grantsTitle')}</div>
+            {grants.map((grant) => {
+              const expiry = expiryOf(grant.expiresAt, t)
+              return (
+                <div className="dcl-grant" key={grant.campaign + String(grant.expiresAt)}>
+                  <span className="dcl-grant-label">
+                    {grant.campaign || t('balance.bonus')}
+                    {expiry !== null ? (
+                      <span className="dcl-grant-expiry" data-soon={expiry.soon || undefined}>
+                        {' '}{expiry.text}
+                      </span>
+                    ) : null}
+                  </span>
+                  <span className="dcl-grant-value">
+                    {formatCurrency(locale, grant.amount, grant.currency)}
+                  </span>
+                </div>
+              )
+            })}
+            <div className="dcl-grants-note">{t('balance.grantsNote')}</div>
+          </div>
+        )}
+
         <div className="dcl-balance-note">{t('balance.note')}</div>
       </section>
     </div>
   )
+}
+
+/**
+ * Describe a bonus expiry in days, so the reader can tell at a glance whether
+ * it needs acting on. Within a week it says so explicitly and is flagged, and
+ * anything already past is reported as expired rather than as a negative
+ * number of days.
+ * @param expiresAt - ISO timestamp from the platform, or null.
+ * @param t - translator, for the relative-day phrasing.
+ */
+function expiryOf(expiresAt, t) {
+  if (typeof expiresAt !== 'string' || expiresAt.length === 0) return null
+  const ms = Date.parse(expiresAt)
+  if (Number.isNaN(ms)) return null
+  const days = Math.ceil((ms - Date.now()) / 86_400_000)
+  if (days < 0) return { text: t('balance.expired'), soon: true }
+  if (days === 0) return { text: t('balance.expiresToday'), soon: true }
+  if (days <= 7) return { text: t('balance.expiresSoon', { n: days }), soon: true }
+  return { text: t('balance.expiresIn', { n: days }), soon: false }
 }
 
 /** Empty/blocked states share one shape: a title, an explanation, an optional action. */

@@ -355,6 +355,29 @@ export const CSS = `
 .dcl-balance-row-label{color:var(--dsw-alias-label-secondary);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dcl-balance-row-value{color:var(--dsw-alias-label-primary);font-weight:600;white-space:nowrap}
 .dcl-balance-note{color:var(--dsw-alias-label-caption);font-size:var(--dcl-fs-micro);line-height:16px;margin-top:4px}
+/* Deduction order. It is the one fact that makes the bonus balance actionable
+   — it is spent first — so it sits directly under the amounts it explains. */
+.dcl-orderhint{
+  margin-top:12px;
+  padding:9px 12px;
+  border-radius:9px;
+  background:var(--dsw-alias-interactive-bg-hover);
+  border-left:2px solid var(--dsw-alias-state-warn-primary);
+  color:var(--dsw-alias-label-secondary);
+  font-size:var(--dcl-fs-caption);
+  line-height:18px;
+}
+/* Unacknowledged bonus grants, each with its expiry. A near expiry is amber
+   and carries the amber over to the date, where the eye checks first. */
+.dcl-grants{display:flex;flex-direction:column;gap:2px;margin-top:4px}
+.dcl-grants-title{color:var(--dsw-alias-label-secondary);font-size:var(--dcl-fs-caption);font-weight:600;line-height:18px;padding-bottom:2px}
+.dcl-grant{display:flex;align-items:baseline;justify-content:space-between;gap:14px;padding:6px 0;border-bottom:1px solid var(--dsw-alias-border-l2);font-size:var(--dcl-fs-value);line-height:19px}
+.dcl-grant:last-of-type{border-bottom:none}
+.dcl-grant-label{color:var(--dsw-alias-label-primary);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dcl-grant-expiry{color:var(--dsw-alias-label-tertiary);font-size:var(--dcl-fs-micro);white-space:nowrap}
+.dcl-grant-expiry[data-soon]{color:var(--dsw-alias-state-warn-primary);font-weight:600}
+.dcl-grant-value{color:var(--dsw-alias-label-primary);font-weight:600;white-space:nowrap}
+.dcl-grants-note{color:var(--dsw-alias-label-caption);font-size:var(--dcl-fs-micro);line-height:15px;padding-top:4px}
 .dcl-link{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 13px;border:1px solid var(--dsw-alias-border-l2);border-radius:9px;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-secondary);font:inherit;font-size:var(--dcl-fs-caption);text-decoration:none;cursor:pointer;transition:color 120ms ease-out}
 .dcl-link:hover{color:var(--dsw-alias-label-primary)}
 `

@@ -239,10 +239,37 @@ async function collectBalance(ctx, req) {
   // null means "no usable credential" — signed out or the token was rejected.
   if (result === null || result === undefined) return { status: 'signed-out' }
   if (result.status !== 'ready') return { status: 'failed' }
+
+  // Bonus expiry is not part of the wallet summary — that endpoint carries
+  // only currency and amount. The platform exposes expiry on the bonus
+  // notification list instead, so it is fetched separately and is strictly
+  // best-effort: a failure here must not take the balance down with it.
+  let bonusGrants = null
+  try {
+    if (typeof account.getUnnotifiedBonuses === 'function') {
+      const listed = await withBalanceLock(() => account.getUnnotifiedBonuses(client))
+      if (listed !== null && listed !== undefined && Array.isArray(listed.bonuses)) {
+        bonusGrants = listed.bonuses.map((row) => ({
+          campaign: row.campaign ?? null,
+          amount: row.amount ?? null,
+          currency: row.currency ?? null,
+          grantedAt: row.grantedAt ?? null,
+          expiresAt: row.expiresAt ?? null,
+          message: row.msg ?? null,
+        }))
+      }
+    }
+  } catch (error) {
+    ctx.logger.warn(`dsh-scope: bonus listing unavailable: ${String(error)}`)
+  }
+
   return {
     status: 'ready',
     wallets: result.value ?? [],
     bonusWallets: result.bonusWallets ?? [],
+    // Grants with their expiry, when the platform reports them. null means
+    // "no unacknowledged bonus grants", which is not an error.
+    bonusGrants,
   }
 }
 
