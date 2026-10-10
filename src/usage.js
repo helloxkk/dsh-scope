@@ -117,7 +117,7 @@ function pruneIfEmpty(byDay, day) {
  * the whole log.
  */
 export function createUsageState() {
-  return { days: new Map(), lastSample: null, currentModel: null, consumed: 0 }
+  return { days: new Map(), lastSample: null, currentModel: null, consumed: 0, lastSeq: null }
 }
 
 /** Reset a state in place (live↔persisted transitions, log rewrites). */

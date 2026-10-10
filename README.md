@@ -75,7 +75,11 @@ node scripts/install.mjs web && dsh web
 
 ## Compatibility
 
-Built and verified against `dsh` `0.1.0-rc.6` (`@deepseek-ai/dsh-base` / `dsh-web-app` bundles). The harness is in developer preview and iterates quickly — expect compatibility-breaking changes.
+Built and verified against `dsh` `0.1.0-rc.6` and `0.2.0-rc.2` (`@deepseek-ai/dsh-base` / `dsh-web-app` bundles). The harness is in developer preview and iterates quickly — expect compatibility-breaking changes.
+
+The host half reads persisted logs through whichever API the installed `sessionPersistence` exposes: `open(id, 'read')` plus `handle.read(offset)` on `0.2.x`, and the older `readFrom(id, fromSeq)` elsewhere. `list()` is normalized to `{ header, revision }` snapshots, so both shapes fold identically.
+
+dsh imports each plugin module once at startup, so a profile config reload cannot replace host-half code: **restart dsh after rebuilding**.
 
 ## License
 

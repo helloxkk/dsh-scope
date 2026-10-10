@@ -112,6 +112,7 @@ function serializeSession(state) {
     kind: state.kind,
     revision: state.revision,
     consumed: state.consumed,
+    lastSeq: state.lastSeq,
     days: serializeDayMap(state.days),
     lastSample: state.lastSample,
     currentModel: state.currentModel,
@@ -124,6 +125,7 @@ function parseSession(entry) {
   state.kind = entry.kind
   state.revision = entry.revision
   state.consumed = typeof entry.consumed === 'number' ? entry.consumed : 0
+  if (typeof entry.lastSeq === 'number') state.lastSeq = entry.lastSeq
   state.days = parseDayMap(entry.days)
   state.lastSample = entry.lastSample ?? null
   state.currentModel = entry.currentModel ?? null
@@ -175,6 +177,58 @@ function withLock(run) {
   return inflight
 }
 
+// --------------------------------------------------------- log read adapter
+
+/** Number of events in a slice (the fold's cursor advances by this much). */
+function countEvents(events) {
+  return Array.isArray(events) ? events.length : 0
+}
+
+/** The `seq` of the last event in a slice, or undefined when it carries none. */
+function lastSeqOf(events) {
+  if (!Array.isArray(events) || events.length === 0) return undefined
+  const seq = events[events.length - 1]?.seq
+  return typeof seq === 'number' ? seq : undefined
+}
+
+/**
+ * Read persisted session events from array offset `from`, across the two
+ * persistence shapes dsh has shipped:
+ *
+ *   - `0.2.x`: `open(id, 'read')` yields a handle whose `read(offset, length)`
+ *     returns `{ events, eventState }`, sliced by event index. The handle also
+ *     enforces monotonicity itself: it throws when the stored log shrank below
+ *     a prefix this handle already observed.
+ *   - older builds: `readFrom(id, fromSeq)`, sliced by event seq.
+ *
+ * The caller decides whether the returned slice is a delta or a rewrite by
+ * comparing `seq` values, so an empty slice stays a normal no-op.
+ *
+ * @param persistence - the `sessionPersistence` service.
+ * @param id - session id.
+ * @param from - events already folded, as an index (0.2.x) or seq (legacy).
+ * @returns the events from `from` onward.
+ */
+async function readPersistedEvents(persistence, id, from) {
+  if (typeof persistence.readFrom === 'function') {
+    // Legacy seq-based backend: readFrom is inclusive of `from`.
+    const { events } = await persistence.readFrom(id, from)
+    return events ?? []
+  }
+  if (typeof persistence.open !== 'function') {
+    throw new Error('sessionPersistence exposes neither open() nor readFrom()')
+  }
+  // One fresh handle per read: a long-lived handle would pin a log revision
+  // and turn every later rewrite into a hard error instead of a refold.
+  const handle = await persistence.open(id, 'read')
+  try {
+    const { events } = await handle.read(from)
+    return events ?? []
+  } finally {
+    await handle.close?.()
+  }
+}
+
 // ------------------------------------------------------------- aggregation
 
 /** Reset a fold state in place. */
@@ -183,6 +237,7 @@ function resetFold(state) {
   state.lastSample = null
   state.currentModel = null
   state.consumed = 0
+  state.lastSeq = null
 }
 
 /**
@@ -206,9 +261,10 @@ export async function collectUsage(ctx) {
         attached.add(session.id)
         const state = cache.sessions[session.id] ?? createUsageState()
         if (state.kind !== 'live') { resetFold(state); dirty = true }
-        const count = session.events.length
+        const liveEvents = Array.isArray(session.events) ? session.events : []
+        const count = liveEvents.length
         if ((state.consumed ?? 0) < count) {
-          applyUsageDelta(state, session.events.slice(state.consumed ?? 0))
+          applyUsageDelta(state, liveEvents.slice(state.consumed ?? 0))
           state.consumed = count
           dirty = true
         }
@@ -220,6 +276,9 @@ export async function collectUsage(ctx) {
     const persistence = ctx.get('sessionPersistence')
     const persistedIds = new Set()
     if (persistence !== undefined) {
+      // Both shapes end up as a list of `{ header, revision }` snapshots:
+      // `listSnapshots()` on backends that expose it, `list()` on 0.2.x where
+      // list() itself already returns snapshots rather than bare headers.
       let snapshots = null
       if (typeof persistence.listSnapshots === 'function') {
         try {
@@ -228,9 +287,18 @@ export async function collectUsage(ctx) {
           ctx.logger.warn(`dsh-scope: listSnapshots failed, falling back to list(): ${String(error)}`)
         }
       }
-      const metas = snapshots !== null ? snapshots.map((entry) => entry.header) : await persistence.list()
+      if (snapshots === null) {
+        const listed = await persistence.list()
+        // Tolerate a backend whose list() returns bare headers.
+        snapshots = listed
+          .map((entry) => (entry !== null && typeof entry === 'object' && entry.header !== undefined
+            ? entry
+            : { header: entry, revision: undefined }))
+          .filter((entry) => entry.header !== null && typeof entry.header === 'object' && typeof entry.header.id === 'string')
+      }
+      const metas = snapshots.map((entry) => entry.header)
       const revisionOf = new Map()
-      if (snapshots !== null) for (const entry of snapshots) revisionOf.set(entry.header.id, entry.revision)
+      for (const entry of snapshots) revisionOf.set(entry.header.id, entry.revision)
       for (const meta of metas) {
         persistedIds.add(meta.id)
         if (attached.has(meta.id)) continue
@@ -242,24 +310,26 @@ export async function collectUsage(ctx) {
         if (changed) {
           try {
             const wasPersisted = state.kind === 'persisted'
-            const fromSeq = wasPersisted ? state.consumed : 0
-            // readFrom(id, fromSeq) returns events with seq >= fromSeq (inclusive).
-            const { events } = await persistence.readFrom(meta.id, fromSeq)
+            const from = wasPersisted ? (state.consumed ?? 0) : 0
+            const events = await readPersistedEvents(persistence, meta.id, from)
             if (!wasPersisted) resetFold(state)
-            const fresh = wasPersisted ? events.filter((event) => event.seq > (state.consumed ?? 0)) : events
             // No new events is the normal unchanged case — a no-op, NOT a
-            // rewrite signal. A gap (fresh[0].seq > consumed + 1) means the
-            // log was truncated or rewritten: refold the whole log.
-            const contiguous = fresh.length === 0 || fresh[0].seq === state.consumed + 1
-            if (!contiguous && state.consumed > 0) {
+            // rewrite signal. A gap (first fresh seq past the last folded
+            // seq + 1) means the log was truncated or rewritten: refold all.
+            const first = events[0]
+            const expected = state.lastSeq === undefined ? undefined : state.lastSeq + 1
+            const contiguous = first === undefined || expected === undefined || first.seq === expected
+            if (!contiguous && (state.consumed ?? 0) > 0) {
               // Log truncated or rewritten: refold the whole log.
+              const allEvents = await readPersistedEvents(persistence, meta.id, 0)
               resetFold(state)
-              const { events: allEvents } = await persistence.readFrom(meta.id, 0)
               applyUsageDelta(state, allEvents)
-              state.consumed = allEvents.length > 0 ? allEvents[allEvents.length - 1].seq : 0
-            } else if (fresh.length > 0) {
-              applyUsageDelta(state, fresh)
-              state.consumed = fresh[fresh.length - 1].seq
+              state.consumed = countEvents(allEvents)
+              state.lastSeq = lastSeqOf(allEvents)
+            } else if (events.length > 0) {
+              applyUsageDelta(state, events)
+              state.consumed = from + countEvents(events)
+              state.lastSeq = lastSeqOf(events) ?? state.lastSeq
             }
             state.kind = 'persisted'
             if (revision !== undefined) state.revision = revision
