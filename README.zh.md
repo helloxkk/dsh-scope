@@ -5,28 +5,31 @@
 
 [English](README.md) · **简体中文**
 
-**[DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（dsh）的上下文可视化插件** —— 每个会话的 Codex 式 `/context` 透镜 + 全历史的 ZCode 式使用统计面板。
+**[DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（dsh）的使用统计插件** —— 跨全部会话的 Token 用量总览面板，外加当前会话的 Codex 式 `/context` 透镜。
 
-一个插件，两处 UI：
+DeepSeek Harness 算了大量 token 账，却一点都不给你看。`dsh-scope` 把它呈现在两处：
 
-1. **Context Lens**（会话头部）—— 实时 context 窗口占用率（system / tools / messages 分段构成条）、四桶会话累计、KV 缓存命中率。数据全部来自官方 `token-meter` 会话投影（`useProjection`）—— 无 RPC、无自定义协议。
-2. **使用统计**（侧边栏底部）—— 移植自 [ZCode](https://github.com/zai-org/ZCode)「应用用量」的统计面板，从侧栏底部打开（展开时显示文字，收起时显示图标）：
+## 使用统计（侧边栏底部）
 
-   - **累计摘要条** —— 累计与峰值日 Token、最长聊天时长、当前与最长连续天数。
-   - **Token 活动** —— 52 周热力图，支持 **每日 / 每周 / 累计** 三种模式。每周对每列求和，累计则跨列累加，所以同一张网格既可以一眼看全年，也可以看增长趋势。
-   - **时间范围** —— 近 7 日 / 近 30 日，驱动下方两张图。
-   - **每日 Token 趋势** —— 每个模型一条折线，带可换行图例与逐日 tooltip；只有窗口期内用过的模型才会成为序列。
-   - **模型用量** —— 环形图，中心显示窗口内总量，右侧为百分比列表。
-
-   全部数据来自本插件自己的回环聚合端点，整个面板只发一次请求。
-
-## 截图
+主功能，移植自 [ZCode](https://github.com/zai-org/ZCode)「应用用量」。从侧栏底部打开 —— 展开时显示文字，收起时显示图标。
 
 ![使用统计面板](docs/panel-zh.png)
 
+- **累计摘要条** —— 累计与峰值日 Token、最长聊天时长、当前与最长连续天数。
+- **Token 活动** —— 52 周热力图，支持 **每日 / 每周 / 累计** 三种模式。每日按当天用量着色；每周对每列求和；累计则跨列累加。同一张网格，既可以一眼看全年，也可以看增长趋势。
+- **时间范围** —— 近 7 日 / 近 30 日，驱动下方两个视图。
+- **每日 Token 趋势** —— 每个模型一条折线，带可换行图例与逐日 tooltip；只有窗口期内用过的模型才会成为序列。
+- **模型用量** —— 环形图，中心显示窗口内总量，右侧为百分比列表。
+
+整个面板只向本插件自己的回环端点发一次请求。
+
+## Context Lens（会话头部）
+
+针对你当前所在会话的 Codex 式 `/context` 读数：头部的实时占用率圆环，展开后显示窗口占用率、system / tools / messages 分段构成条、四桶会话累计与 KV 缓存命中率。数据来自官方 `token-meter` 会话投影（`useProjection`）—— 无 RPC、无自定义协议。
+
 ## 为什么做
 
-DeepSeek Harness 把措辞和上下文当一等工程对象，但自带 Web UI 既不显示 context 占用也没有用量历史。`dsh-scope` 按 harness 原生方式补上这两个缺口：读平台已经算好的投影、用平台的设计 token（`--dsw-alias-*`）、走平台的 slot 注册体系 —— 明暗主题零媒体查询都正确。
+难的部分 harness 已经做了：`token-meter` 从持久会话日志里折算出用量，slot 注册体系给插件留了挂载点。缺的是一个呈现界面。`dsh-scope` 按 harness 原生方式补上：读平台已经算好的投影、用平台的设计 token（`--dsw-alias-*`）、走平台的 slot 注册体系 —— 明暗主题零媒体查询都正确。
 
 ## 安装
 
@@ -66,16 +69,16 @@ rm -f ~/.dsh/storages/dsh-scope-cache.json   # 可选：清掉 fold 缓存
 
 ## 工作原理
 
-**浏览器半**（`lib/client.js`，通过 package.json 的 `dsh.client` 声明被发现）：
+**宿主半**（`lib/index.js`）：一个只读、仅回环的端点 `GET /api/dsh-scope/days`。聚合是增量的 —— 每会话 fold 状态缓存在内存并持久化到 `~/.dsh/storages/dsh-scope-cache.json`；每次请求只 fold 上次之后新增的事件。活跃会话 fold 内存尾部；持久会话在存储后端的不透明 revision 未变时直接跳过，变化时只读新增后缀，带连续性检查，日志被截断或重写则全量重 fold。稳态成本 O(新增事件)，日志再大也不变慢。
 
-- `conversation.session.header.actions`（order 30，排在任务列表之后）渲染透镜触发器：占用率圆环 + 实时百分比。弹出面板读取三个官方投影 —— `tokenUsage`（整个持久日志累计的四桶）、`contextPressure`（输入侧窗口压力 + 路由的 context window）、`contextBreakdown`（下一次请求的 system/tools/message 启发式构成）。
-- `sidebar.footer.action` 渲染使用统计触发器（侧栏展开显示文字，收起显示图标）。面板同源 fetch `GET /api/dsh-scope/days`，所有视图都由这一份数据推导。
-
-**宿主半**（`lib/index.js`）：一个只读、仅回环的端点。聚合是增量的：每会话 fold 状态缓存在内存并持久化到 `~/.dsh/storages/dsh-scope-cache.json`；每次请求只 fold 上次之后新增的事件。活跃会话 fold 内存尾部；持久会话在存储后端的不透明 revision 未变时直接跳过，变化时只读新增后缀，带连续性检查，日志被截断或重写则全量重 fold。稳态成本 O(新增事件)，日志再大也不变慢。
-
-Fold 语义对齐 `dsh-token-meter` 的 `tokenUsage` 投影：usage 样本挂在 `assistant/chunk`（`data.chunk.type === "usage"`）或 `assistant/message`（`data.usage`）上；同一 (turn, step) 的重复样本替换旧值而非重复计数，并重新归因到后一事件所在的日期与模型。模型归因跟随 `assistant/message` 的 `data.message.source`，回退到最近的 `request/header` 配置。
+Fold 语义对齐 `dsh-token-meter` 的 `tokenUsage` 投影：usage 样本挂在 `assistant/chunk`（`data.chunk.type === "usage"`）或 `assistant/message`（`data.usage`）上；同一 (turn, step) 的重复样本**替换**旧值而非重复计数，并重新归因到后一事件所在的日期与模型。模型归因跟随 `assistant/message` 的 `data.message.source`，回退到最近的 `request/header` 配置。
 
 除 token 桶外，fold 还会按天统计 `turn/start` 与 `tool/call` 事件（供热力图每周/累计模式的 tooltip 使用），并记录每个会话首末事件时间戳，用于摘要条的最长聊天时长。传输的 payload 携带每天的全部模型而非截断的 top-N，因此趋势图与环形图能覆盖所有模型。
+
+**浏览器半**（`lib/client.js`，通过 package.json 的 `dsh.client` 声明被发现）：
+
+- `sidebar.footer.action` 渲染使用统计触发器。面板同源 fetch `/api/dsh-scope/days`，所有视图都由这一份数据推导。
+- `conversation.session.header.actions`（order 30，排在任务列表之后）渲染透镜触发器：占用率圆环 + 实时百分比。弹出面板读取三个官方投影 —— `tokenUsage`（整个持久日志累计的四桶）、`contextPressure`（输入侧窗口压力 + 路由的 context window）、`contextBreakdown`（下一次请求的 system/tools/message 启发式构成）。
 
 不外发任何数据：端点在任何处理前拒绝非回环调用者和非 GET 方法，不读取任何 provider 凭据。
 
