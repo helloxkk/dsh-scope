@@ -133,7 +133,14 @@ export function AppUsagePanel({ t, locale, onRefreshState }) {
   )
 }
 
-/** Header refresh control; the panel header owns its placement. */
+/**
+ * Header refresh control; the panel header owns its placement.
+ *
+ * Icon-only: the header already carries the title and the page tabs, and a
+ * third labelled control competes with both. The spinning icon is the whole
+ * progress signal (`aria-busy` carries it to assistive tech), and because the
+ * label never changes the header row cannot reflow mid-request.
+ */
 export function RefreshButton({ t, loading, onClick }) {
   return (
     <button
@@ -143,12 +150,9 @@ export function RefreshButton({ t, loading, onClick }) {
       disabled={loading}
       title={t('heat.refresh')}
       aria-label={t('heat.refresh')}
-      // The label never changes on click — the spinning icon is the whole
-      // progress signal, so the button keeps its width and the row stays put.
       aria-busy={loading || undefined}
     >
       <RefreshIcon />
-      {t('heat.refresh')}
     </button>
   )
 }

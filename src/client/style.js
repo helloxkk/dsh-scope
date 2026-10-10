@@ -346,11 +346,12 @@ export const CSS = `
 /* ---- balance page ---- */
 /* The headline figure is the point of the page, so it gets the only
    display-sized type in the panel. */
-.dcl-balance-hero{display:flex;flex-direction:column;gap:5px;padding:6px 0 2px}
-.dcl-balance-amount{color:var(--dsw-alias-label-primary);font-size:40px;font-weight:600;line-height:46px;letter-spacing:-0.03em}
+.dcl-balance-hero{display:flex;flex-direction:column;gap:6px}
+.dcl-balance-amount{color:var(--dsw-alias-label-primary);font-size:40px;font-weight:600;line-height:44px;letter-spacing:-0.03em}
 .dcl-balance-amount-note{color:var(--dsw-alias-label-tertiary);font-size:var(--dcl-fs-caption);line-height:17px}
-.dcl-balance-rows{display:flex;flex-direction:column;margin-top:12px;padding-top:6px;border-top:1px solid var(--dsw-alias-border-l2)}
-.dcl-balance-row{display:flex;align-items:baseline;justify-content:space-between;gap:14px;padding:8px 0;font-size:var(--dcl-fs-value);line-height:19px}
+.dcl-balance-rows{display:flex;flex-direction:column;margin-top:4px}
+.dcl-balance-row{display:flex;align-items:baseline;justify-content:space-between;gap:14px;padding:7px 0;border-bottom:1px solid var(--dsw-alias-border-l2);font-size:var(--dcl-fs-value);line-height:19px}
+.dcl-balance-row:last-child{border-bottom:none}
 .dcl-balance-row-label{color:var(--dsw-alias-label-secondary);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dcl-balance-row-value{color:var(--dsw-alias-label-primary);font-weight:600;white-space:nowrap}
 .dcl-balance-note{color:var(--dsw-alias-label-caption);font-size:var(--dcl-fs-micro);line-height:16px;margin-top:4px}

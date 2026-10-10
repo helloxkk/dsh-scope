@@ -44,45 +44,48 @@ export function BalancePanel({ t, locale, onRefreshState }) {
 
   const normal = sumWallets(data.wallets ?? [])
   const bonus = sumWallets(data.bonusWallets ?? [])
-  const [primary, ...rest] = normal
+  // The headline figure is the spendable total across every wallet, in the
+  // account's primary currency. Every wallet is then itemized below, so the
+  // sum is never the only thing you see.
+  const primaryCurrency = normal[0]?.currency ?? bonus[0]?.currency
+  const primaryAmount = normal
+    .filter((w) => w.currency === primaryCurrency)
+    .reduce((sum, w) => sum + w.amount, 0)
+  const breakdown = [
+    ...normal.map((w) => ({ ...w, label: w.currency === primaryCurrency ? t('balance.normal') : w.currency })),
+    ...bonus.map((w) => ({ ...w, label: t('balance.bonus') })),
+  ]
+
+  if (primaryCurrency === undefined) {
+    return (
+      <div className="dcl-stats">
+        <Notice title={t('balance.failedTitle')} description={t('balance.failedDesc')} />
+      </div>
+    )
+  }
 
   return (
     <div className="dcl-stats">
       <section className="dcl-card">
-        <div className="dcl-card-title">{t('balance.title')}</div>
+        <div className="dcl-balance-hero">
+          <div className="dcl-card-title">{t('balance.title')}</div>
+          <div className="dcl-balance-amount">
+            {formatCurrency(locale, primaryAmount, primaryCurrency)}
+          </div>
+          <div className="dcl-balance-amount-note">{t('balance.available')}</div>
+        </div>
 
-        {primary === undefined ? (
-          <Notice title={t('balance.failedTitle')} description={t('balance.failedDesc')} />
-        ) : (
-          <>
-            <div className="dcl-balance-hero">
-              <div className="dcl-balance-amount">
-                {formatCurrency(locale, primary.amount, primary.currency)}
+        {breakdown.length > 0 && (
+          <div className="dcl-balance-rows">
+            {breakdown.map((wallet) => (
+              <div className="dcl-balance-row" key={`${wallet.label}-${wallet.currency}`}>
+                <span className="dcl-balance-row-label">{wallet.label}</span>
+                <span className="dcl-balance-row-value">
+                  {formatCurrency(locale, wallet.amount, wallet.currency)}
+                </span>
               </div>
-              <div className="dcl-balance-amount-note">{t('balance.normal')}</div>
-            </div>
-
-            {(rest.length > 0 || bonus.length > 0) && (
-              <div className="dcl-balance-rows">
-                {rest.map((wallet) => (
-                  <div className="dcl-balance-row" key={`normal-${wallet.currency}`}>
-                    <span className="dcl-balance-row-label">{wallet.currency}</span>
-                    <span className="dcl-balance-row-value">
-                      {formatCurrency(locale, wallet.amount, wallet.currency)}
-                    </span>
-                  </div>
-                ))}
-                {bonus.map((wallet) => (
-                  <div className="dcl-balance-row" key={`bonus-${wallet.currency}`}>
-                    <span className="dcl-balance-row-label">{t('balance.bonus')}</span>
-                    <span className="dcl-balance-row-value">
-                      {formatCurrency(locale, wallet.amount, wallet.currency)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </>
+            ))}
+          </div>
         )}
 
         <div className="dcl-balance-note">{t('balance.note')}</div>
