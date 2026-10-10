@@ -26,8 +26,10 @@ import {
   YAxis,
 } from 'recharts'
 import {
+  DAYS_IN_WEEK,
   HEATMAP_MODES,
   RANGE_DAYS,
+  WEEKS_IN_GRID,
   buildHeatmapColumns,
   buildModelShares,
   buildMonthSpans,
@@ -54,10 +56,21 @@ const RANGES = Object.keys(RANGE_DAYS)
  */
 const MIN_BUSY_MS = 450
 
+/**
+ * Last successful payload, kept for the life of the page.
+ *
+ * The panel unmounts when it closes, so without this every reopen would replay
+ * the loading state and the panel would grow from a stub into its full height
+ * — a visible jump on every open. With the cache, only the very first open has
+ * to show a placeholder; later opens paint real content immediately and refresh
+ * behind it.
+ */
+let lastPayload = null
+
 /** Fetch the aggregated payload once per open panel; `load` re-runs it. */
 function useUsageData() {
-  const [data, setData] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [data, setData] = useState(lastPayload)
+  const [loading, setLoading] = useState(lastPayload === null)
   const [error, setError] = useState(null)
   // Guards against a slow first response overwriting a newer one.
   const requestRef = useRef(0)
@@ -85,7 +98,10 @@ function useUsageData() {
       })
       .then((payload) => {
         if (payload?.ok === false) throw new Error(payload.message ?? payload.error ?? 'request failed')
-        settle(() => setData(payload))
+        settle(() => {
+          lastPayload = payload
+          setData(payload)
+        })
       })
       .catch((reason) => {
         settle(() => setError(String(reason?.message ?? reason)))
@@ -121,12 +137,7 @@ export function AppUsagePanel({ t, locale, onRefreshState }) {
   const hasUsage = days.some((day) => day.tokens > 0)
 
   if (loading && data === null) {
-    return (
-      <div className="dcl-stats">
-        <SummaryStrip t={t} locale={locale} summary={null} />
-        <EmptyState title={t('stats.loadingTitle')} description={t('stats.loadingDescription')} />
-      </div>
-    )
+    return <PanelSkeleton t={t} />
   }
 
   return (
@@ -261,6 +272,82 @@ function EmptyState({ title, description }) {
     <div className="dcl-empty">
       <div className="dcl-empty-title">{title}</div>
       <div className="dcl-empty-desc">{description}</div>
+    </div>
+  )
+}
+
+/**
+ * Placeholder shown only on the very first open, before any payload exists.
+ *
+ * It mirrors the loaded layout block for block and reuses the same layout
+ * classes, so the panel opens at its final size and the content later fills in
+ * place. A shorter stub here would make the panel grow the moment data landed
+ * — the jump this exists to prevent.
+ */
+function PanelSkeleton({ t }) {
+  const columns = `repeat(${WEEKS_IN_GRID},minmax(0,1fr))`
+  return (
+    <div className="dcl-stats" aria-busy="true" aria-live="polite">
+      <section className="dcl-summary">
+        {Array.from({ length: 5 }, (_, index) => (
+          <div key={index} className="dcl-summary-cell">
+            {index > 0 ? <div className="dcl-summary-div" aria-hidden="true" /> : null}
+            <div className="dcl-summary-item">
+              <div className="dcl-skel dcl-skel-summary-value" />
+              <div className="dcl-skel dcl-skel-summary-label" />
+            </div>
+          </div>
+        ))}
+      </section>
+
+      <section className="dcl-card">
+        <div className="dcl-card-head">
+          <div className="dcl-card-title">{t('stats.tokenActivity')}</div>
+          <div className="dcl-skel dcl-skel-tabs" />
+        </div>
+        {/* A real grid of empty cells: its height is then exactly the height
+            the loaded grid will take, at whatever width the panel has. */}
+        <div className="dcl-hm">
+          <div className="dcl-hm-months" style={{ gridTemplateColumns: columns }} />
+          <div className="dcl-hm-body">
+            <div className="dcl-hm-days" aria-hidden="true" />
+            <div className="dcl-hm-cols" style={{ gridTemplateColumns: columns }}>
+              {Array.from({ length: WEEKS_IN_GRID }, (_, column) => (
+                <div className="dcl-hm-col" key={column}>
+                  {Array.from({ length: DAYS_IN_WEEK }, (_, row) => (
+                    <div className="dcl-hm-cell dcl-hm-l0" key={row} />
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div className="dcl-card-head">
+        <div className="dcl-card-title">{t('stats.rangeTitle')}</div>
+        <div className="dcl-skel dcl-skel-tabs" />
+      </div>
+
+      <section className="dcl-card">
+        <div className="dcl-card-title">{t('stats.dailyTrend')}</div>
+        <div className="dcl-legend">
+          <div className="dcl-skel dcl-skel-legend" />
+        </div>
+        <div className="dcl-chart">
+          <div className="dcl-skel dcl-skel-fill" />
+        </div>
+      </section>
+
+      <section className="dcl-card">
+        <div className="dcl-card-title">{t('stats.modelUsage')}</div>
+        <div className="dcl-donut">
+          <div className="dcl-donut-wrap">
+            <div className="dcl-skel-ring" />
+          </div>
+          <div className="dcl-skel dcl-skel-list" />
+        </div>
+      </section>
     </div>
   )
 }

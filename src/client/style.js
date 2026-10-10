@@ -310,6 +310,24 @@ export const CSS = `
 .dcl-empty-title{color:var(--dsw-alias-label-primary);font-size:12px;font-weight:600;line-height:18px}
 .dcl-empty-desc{color:var(--dsw-alias-label-tertiary);font-size:11px;line-height:16px;max-width:34ch}
 
+/* ---- first-open skeleton ---- */
+/* Occupies the same boxes as the loaded panel so it opens at its final size.
+   A gentle pulse reads as "working" without the noise of a shimmer sweep
+   running across 364 grid cells. */
+.dcl-skel{background:var(--dsw-alias-interactive-bg-hover);border-radius:4px;animation:dcl-skel-pulse 1500ms ease-in-out infinite}
+@keyframes dcl-skel-pulse{0%,100%{opacity:.5}50%{opacity:.95}}
+.dcl-skel-summary-value{height:19px;width:58%}
+.dcl-skel-summary-label{height:13px;width:78%}
+.dcl-skel-tabs{height:26px;width:132px;border-radius:999px;flex:none}
+.dcl-skel-legend{height:14px;width:190px;margin:0 auto;border-radius:7px}
+.dcl-skel-fill{width:100%;height:100%;border-radius:8px}
+.dcl-skel-list{width:100%;height:80px;border-radius:8px;align-self:center}
+/* A ring, not a disc: it stands in for the donut. */
+.dcl-skel-ring{width:100%;height:100%;border-radius:50%;border:15px solid var(--dsw-alias-interactive-bg-hover);animation:dcl-skel-pulse 1500ms ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){
+  .dcl-skel,.dcl-skel-ring{animation:none;opacity:.7}
+}
+
 /* Recharts renders inline SVG; these keep grid/axis on theme tokens. */
 .dcl-chart .recharts-cartesian-grid line{stroke:var(--dsw-alias-border-l2)}
 .dcl-chart .recharts-cartesian-axis-line,.dcl-chart .recharts-cartesian-axis-tick-line{stroke:transparent}

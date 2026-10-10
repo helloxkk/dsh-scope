@@ -63,8 +63,6 @@ export const zh = {
   'stats.heatmapCumulativeCell': '截至 {date} · 累计 {tokens} tokens · {turns} 轮 · {tools} 次工具',
   'stats.emptyTitle': '暂无用量数据',
   'stats.emptyDescription': '开始对话后，这里会按模型和日期统计 token 用量。',
-  'stats.loadingTitle': '正在统计…',
-  'stats.loadingDescription': '正在聚合本地会话历史。',
 }
 
 /** en dictionary. */
@@ -132,8 +130,6 @@ export const en = {
   'stats.heatmapCumulativeCell': 'Through {date} · {tokens} tokens cumulative · {turns} turns · {tools} tool calls',
   'stats.emptyTitle': 'No usage yet',
   'stats.emptyDescription': 'Once you start chatting, token usage appears here by model and day.',
-  'stats.loadingTitle': 'Aggregating…',
-  'stats.loadingDescription': 'Folding local session history.',
 }
 
 /** Locale namespace owned by this plugin. */
