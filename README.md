@@ -113,11 +113,13 @@ dsh imports each plugin module once at startup, so a profile config reload canno
 
 ## Credits
 
-Charts render with [Recharts](https://github.com/recharts/recharts) (MIT).
+The usage panel's layout, its three heatmap modes, and the month-ruler
+alignment are derived from ZCode's 「应用用量」 surface
+([zai-org/ZCode](https://github.com/zai-org/ZCode), Apache-2.0). The rendering,
+data source and theming are this plugin's own. See [NOTICE.md](NOTICE.md) for
+the required attribution and the list of derived files.
 
-This package includes code derived from a third-party Apache-2.0 project.
-Required attribution and the list of derived files are in
-[NOTICE.md](NOTICE.md).
+Charts render with [Recharts](https://github.com/recharts/recharts) (MIT).
 
 ## License
 

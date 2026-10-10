@@ -113,10 +113,12 @@ dsh 只在启动时 import 一次插件模块，**profile 配置热重载无法�
 
 ## 致谢
 
-图表使用 [Recharts](https://github.com/recharts/recharts)（MIT）。
+使用统计面板的版面布局、热力图三种模式与月份标尺对齐规则，参考自 ZCode 的
+「应用用量」界面（[zai-org/ZCode](https://github.com/zai-org/ZCode)，Apache-2.0）；
+渲染实现、数据来源与主题适配均为本项目自己的方案。
+许可证要求的归属声明与派生文件清单见 [NOTICE.md](NOTICE.md)。
 
-本项目包含派生自某 Apache-2.0 第三方项目的代码。许可证要求的归属声明与
-派生文件清单见 [NOTICE.md](NOTICE.md)。
+图表使用 [Recharts](https://github.com/recharts/recharts)（MIT）。
 
 ## 许可
 
