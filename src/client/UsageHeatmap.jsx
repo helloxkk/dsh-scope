@@ -6,13 +6,15 @@
  * owns its own data loading, range/mode state, and refresh.
  */
 import { useEffect, useRef, useState } from 'react'
-import { AppUsagePanel } from './AppUsagePanel.jsx'
+import { AppUsagePanel, RefreshButton } from './AppUsagePanel.jsx'
 
 /**
  * @param props - `wide` from the sidebar shell + `t` from the slot runtime.
  */
 export function UsageHeatmap({ wide, t }) {
   const [open, setOpen] = useState(false)
+  // The panel reports its refresh control up so the header can host it.
+  const [refresh, setRefresh] = useState(null)
   const rootRef = useRef(null)
 
   useEffect(() => {
@@ -55,9 +57,12 @@ export function UsageHeatmap({ wide, t }) {
         <div className="dcl-heatpanel" role="dialog" aria-label={t('stats.title')}>
           <header className="dcl-head">
             <span className="dcl-title">{t('stats.title')}</span>
+            {refresh !== null ? (
+              <RefreshButton t={t} loading={refresh.loading} onClick={refresh.refresh} />
+            ) : null}
           </header>
           <div className="dcl-heatbody">
-            <AppUsagePanel t={t} locale={locale} />
+            <AppUsagePanel t={t} locale={locale} onRefreshState={setRefresh} />
           </div>
         </div>
       )}

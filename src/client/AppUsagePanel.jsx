@@ -178,7 +178,12 @@ function ChartTip({ active, payload, label, locale }) {
   )
 }
 
-export function AppUsagePanel({ t, locale }) {
+/**
+ * @param props - `t`/`locale` from the slot runtime, plus `onRefreshState`
+ *   which reports `{ loading, refresh }` to the owning header so it can host
+ *   the refresh control.
+ */
+export function AppUsagePanel({ t, locale, onRefreshState }) {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -206,6 +211,12 @@ export function AppUsagePanel({ t, locale }) {
   }, [])
 
   useEffect(() => { load() }, [load])
+
+  // Hand the refresh control up to the panel header, which owns the title row.
+  useEffect(() => {
+    if (onRefreshState === undefined) return
+    onRefreshState({ loading, refresh: load })
+  }, [onRefreshState, loading, load])
 
   const days = data?.days ?? []
   const summary = data?.summary
@@ -327,13 +338,24 @@ export function AppUsagePanel({ t, locale }) {
         </>
       )}
 
-      <div className="dcl-footer">
-        <button type="button" className="dcl-refresh" onClick={load} disabled={loading}>
-          <RefreshIcon />
-          {loading ? t('heat.loading') : t('heat.refresh')}
-        </button>
-      </div>
     </div>
+  )
+}
+
+/** Header refresh control: reports its state up so the panel header can host it. */
+export function RefreshButton({ t, loading, onClick }) {
+  return (
+    <button
+      type="button"
+      className="dcl-refresh dcl-refresh-head"
+      onClick={onClick}
+      disabled={loading}
+      title={t('heat.refresh')}
+      aria-label={t('heat.refresh')}
+    >
+      <RefreshIcon />
+      {loading ? t('heat.loading') : t('heat.refresh')}
+    </button>
   )
 }
 

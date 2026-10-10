@@ -164,10 +164,12 @@ export const CSS = `
 .dcl-modelitem-pct{color:var(--dsw-alias-label-tertiary);font-size:11px;line-height:15px;font-variant-numeric:tabular-nums;text-align:right}
 .dcl-modelitem-tokens{grid-column:2;color:var(--dsw-alias-label-tertiary);font-size:10px;line-height:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
-.dcl-footer{display:flex;justify-content:flex-end}
 .dcl-refresh{display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 11px;border:1px solid var(--dsw-alias-border-l2);border-radius:8px;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-secondary);font:inherit;font-size:12px;cursor:pointer}
 .dcl-refresh:hover{color:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-border-l1)}
 .dcl-refresh:disabled{opacity:.55;cursor:default}
+/* Header variant: shorter, borderless chrome that reads as a title-row action. */
+.dcl-refresh-head{height:24px;padding:0 8px;border-color:transparent;background:transparent;font-size:11px;gap:4px}
+.dcl-refresh-head:hover{background:var(--dsw-alias-interactive-bg-hover);border-color:transparent}
 .dcl-empty{display:flex;flex-direction:column;align-items:center;gap:4px;padding:24px 14px;border:1px dashed var(--dsw-alias-border-l2);border-radius:10px;text-align:center}
 .dcl-empty-title{color:var(--dsw-alias-label-primary);font-size:12px;font-weight:500;line-height:18px}
 .dcl-empty-desc{color:var(--dsw-alias-label-tertiary);font-size:11px;line-height:16px}
