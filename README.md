@@ -5,12 +5,12 @@
 
 **English** · [简体中文](README.zh.md)
 
-**Context visibility for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`)** — a Codex-style `/context` lens for every session, plus a GitHub-style usage heatmap for your whole history.
+**Context visibility for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`)** — a Codex-style `/context` lens for every session, plus a ZCode-style usage-statistics panel for your whole history.
 
 Two UI contributions, one plugin:
 
 1. **Context Lens** (session header) — live context-window occupancy with a segmented system / tools / messages composition bar, per-bucket session totals, and KV-cache hit rate. All data flows through the official `token-meter` session projections via `useProjection` — no RPC, no custom wire protocol.
-2. **Usage Heatmap** (sidebar footer) — a GitHub-contribution-graph-style rolling 53-week token-usage grid. Click any day for the four token buckets, cache hit rate, session count, and per-model ranking. Fed by this plugin's own loopback-only aggregation endpoint.
+2. **Usage** (sidebar footer) — a usage-statistics panel ported from [ZCode](https://github.com/zai-org/ZCode)'s 「应用用量」: a lifetime summary strip (total / peak tokens, longest session, current and longest streaks), a 52-week Token-activity heatmap with daily / weekly / cumulative modes, a last-7d / last-30d range switch, a per-model daily trend chart, and a model-usage donut with a percentage list. Fed by this plugin's own loopback-only aggregation endpoint.
 
 ## Screenshots
 
@@ -80,6 +80,16 @@ Built and verified against `dsh` `0.1.0-rc.6` and `0.2.0-rc.2` (`@deepseek-ai/ds
 The host half reads persisted logs through whichever API the installed `sessionPersistence` exposes: `open(id, 'read')` plus `handle.read(offset)` on `0.2.x`, and the older `readFrom(id, fromSeq)` elsewhere. `list()` is normalized to `{ header, revision }` snapshots, so both shapes fold identically.
 
 dsh imports each plugin module once at startup, so a profile config reload cannot replace host-half code: **restart dsh after rebuilding**.
+
+## Credits
+
+The usage-statistics panel is a port of ZCode's 「应用用量」 surface
+([zai-org/ZCode](https://github.com/zai-org/ZCode), Apache-2.0). Layout, the
+heatmap's modes and month-ruler alignment, and the shared number/date
+formatting follow upstream; the Tailwind classes, types, i18n layer, and chart
+palette are replaced with this plugin's own CSS, plain JavaScript and the DSH
+theme aliases. Charts render with [Recharts](https://github.com/recharts/recharts) (MIT).
+See [NOTICE.md](NOTICE.md) for details.
 
 ## License
 

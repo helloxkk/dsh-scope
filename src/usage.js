@@ -98,7 +98,7 @@ function modelOf(event) {
 function entryOf(byDay, day) {
   let entry = byDay.get(day)
   if (entry === undefined) {
-    entry = { totals: zeroBuckets(), models: new Map(), sessionIds: new Set() }
+    entry = { totals: zeroBuckets(), models: new Map(), sessionIds: new Set(), turns: 0, tools: 0 }
     byDay.set(day, entry)
   }
   return entry
@@ -117,7 +117,15 @@ function pruneIfEmpty(byDay, day) {
  * the whole log.
  */
 export function createUsageState() {
-  return { days: new Map(), lastSample: null, currentModel: null, consumed: 0, lastSeq: null }
+  return {
+    days: new Map(),
+    lastSample: null,
+    currentModel: null,
+    consumed: 0,
+    lastSeq: null,
+    startMs: null,
+    endMs: null,
+  }
 }
 
 /** Reset a state in place (live↔persisted transitions, log rewrites). */
@@ -126,6 +134,8 @@ function resetState(state) {
   state.lastSample = null
   state.currentModel = null
   state.consumed = 0
+  state.startMs = null
+  state.endMs = null
 }
 
 /**
@@ -143,6 +153,20 @@ export function applyUsageDelta(state, events) {
     if (event.type === 'request/header') {
       const model = modelOf(event)
       if (model !== undefined) currentModel = model
+    }
+    // Session span: earliest event starts it, latest event extends it.
+    if (typeof event.time === 'number') {
+      if (state.startMs === null || state.startMs === undefined) state.startMs = event.time
+      state.endMs = event.time
+    }
+    // Turn and tool counts ride the day of the event that produced them.
+    if (event.type === 'turn/start' || event.type === 'tool/call') {
+      const day = dayKey(event.time)
+      // Counters live on the day entry but must not create a usage entry on
+      // their own, so they are stored beside the buckets and pruned with them.
+      const entry = entryOf(state.days, day)
+      if (event.type === 'turn/start') entry.turns += 1
+      else entry.tools += 1
     }
     const sample = sampleOf(event)
     if (sample === undefined) continue
@@ -188,6 +212,8 @@ export function mergeInto(byDay, days, sessionId) {
         totals: { ...entry.totals },
         models: new Map([...entry.models].map(([model, buckets]) => [model, { ...buckets }])),
         sessionIds: new Set([sessionId]),
+        turns: entry.turns ?? 0,
+        tools: entry.tools ?? 0,
       })
     } else {
       addInto(merged.totals, entry.totals)
@@ -197,12 +223,71 @@ export function mergeInto(byDay, days, sessionId) {
         merged.models.set(model, target)
       }
       merged.sessionIds.add(sessionId)
+      merged.turns += entry.turns ?? 0
+      merged.tools += entry.tools ?? 0
     }
   }
 }
 
+/**
+ * Summary statistics across the whole history, mirroring ZCode's lifetime
+ * strip: cumulative tokens, the best single day, the longest session, and
+ * both streak lengths over the set of days that saw usage.
+ *
+ * @param byDay - merged day map (day → entry).
+ * @param sessionSpans - per-session `{ id, startMs, endMs }` spans.
+ * @returns summary numbers for the header strip.
+ */
+export function summarize(byDay, sessionSpans) {
+  let totalTokensSum = 0
+  let peakDayTokens = 0
+  for (const entry of byDay.values()) {
+    const total = totalTokens(entry.totals)
+    totalTokensSum += total
+    if (total > peakDayTokens) peakDayTokens = total
+  }
+
+  let longestSessionMs = 0
+  for (const span of sessionSpans) {
+    const duration = Math.max(0, (span.endMs ?? span.startMs) - span.startMs)
+    if (duration > longestSessionMs) longestSessionMs = duration
+  }
+
+  // Streaks walk the calendar, not the data: a day without usage breaks a run.
+  const days = [...byDay.keys()].filter((day) => totalTokens(byDay.get(day).totals) > 0).sort()
+  let longestStreakDays = 0
+  let run = 0
+  let previousMs = null
+  for (const day of days) {
+    const ms = Date.parse(`${day}T00:00:00.000Z`)
+    run = previousMs !== null && ms - previousMs === 86_400_000 ? run + 1 : 1
+    if (run > longestStreakDays) longestStreakDays = run
+    previousMs = ms
+  }
+
+  // Current streak: consecutive days ending today (local date).
+  let currentStreakDays = 0
+  if (days.length > 0) {
+    const last = Date.parse(`${days[days.length - 1]}T00:00:00.000Z`)
+    const today = Date.parse(`${dayKey(Date.now())}T00:00:00.000Z`)
+    const gap = Math.round((today - last) / 86_400_000)
+    // A streak stays "current" when the last usage was today or yesterday.
+    if (gap >= 0 && gap <= 1) {
+      currentStreakDays = 1
+      for (let i = days.length - 1; i > 0; i -= 1) {
+        const a = Date.parse(`${days[i]}T00:00:00.000Z`)
+        const b = Date.parse(`${days[i - 1]}T00:00:00.000Z`)
+        if (a - b !== 86_400_000) break
+        currentStreakDays += 1
+      }
+    }
+  }
+
+  return { totalTokens: totalTokensSum, peakDayTokens, longestSessionMs, currentStreakDays, longestStreakDays }
+}
+
 /** Compact wire shape: sorted days with totals, hit rate, session count, models. */
-export function renderUsage(byDay, generatedAt) {
+export function renderUsage(byDay, generatedAt, sessionSpans = []) {
   const days = []
   for (const day of [...byDay.keys()].sort()) {
     const entry = byDay.get(day)
@@ -215,11 +300,12 @@ export function renderUsage(byDay, generatedAt) {
       cacheWriteTokens: entry.totals.cacheWriteTokens,
       cacheHitRate: cacheHitRate(entry.totals),
       sessions: entry.sessionIds.size,
+      turns: entry.turns ?? 0,
+      tools: entry.tools ?? 0,
       models: [...entry.models.entries()]
         .map(([model, buckets]) => ({ model, tokens: totalTokens(buckets) }))
-        .sort((a, b) => b.tokens - a.tokens)
-        .slice(0, 6),
+        .sort((a, b) => b.tokens - a.tokens),
     })
   }
-  return { generatedAt, days }
+  return { generatedAt, days, summary: summarize(byDay, sessionSpans) }
 }

@@ -84,6 +84,8 @@ function serializeDayMap(days) {
     out[day] = {
       totals: entry.totals,
       models: [...entry.models.entries()],
+      turns: entry.turns ?? 0,
+      tools: entry.tools ?? 0,
     }
   }
   return out
@@ -102,6 +104,8 @@ function parseDayMap(raw) {
         cacheWriteTokens: entry.totals?.cacheWriteTokens ?? 0,
       },
       models: new Map(Array.isArray(entry.models) ? entry.models : []),
+      turns: typeof entry.turns === 'number' ? entry.turns : 0,
+      tools: typeof entry.tools === 'number' ? entry.tools : 0,
     })
   }
   return days
@@ -113,6 +117,8 @@ function serializeSession(state) {
     revision: state.revision,
     consumed: state.consumed,
     lastSeq: state.lastSeq,
+    startMs: state.startMs,
+    endMs: state.endMs,
     days: serializeDayMap(state.days),
     lastSample: state.lastSample,
     currentModel: state.currentModel,
@@ -126,6 +132,8 @@ function parseSession(entry) {
   state.revision = entry.revision
   state.consumed = typeof entry.consumed === 'number' ? entry.consumed : 0
   if (typeof entry.lastSeq === 'number') state.lastSeq = entry.lastSeq
+  if (typeof entry.startMs === 'number') state.startMs = entry.startMs
+  if (typeof entry.endMs === 'number') state.endMs = entry.endMs
   state.days = parseDayMap(entry.days)
   state.lastSample = entry.lastSample ?? null
   state.currentModel = entry.currentModel ?? null
@@ -349,9 +357,15 @@ export async function collectUsage(ctx) {
       }
     }
     const byDay = new Map()
-    for (const [id, state] of Object.entries(cache.sessions)) mergeInto(byDay, state.days, id)
+    const sessionSpans = []
+    for (const [id, state] of Object.entries(cache.sessions)) {
+      mergeInto(byDay, state.days, id)
+      if (typeof state.startMs === 'number') {
+        sessionSpans.push({ id, startMs: state.startMs, endMs: state.endMs ?? state.startMs })
+      }
+    }
     if (dirty) await saveCache(ctx, cache)
-    return renderUsage(byDay, Date.now())
+    return renderUsage(byDay, Date.now(), sessionSpans)
   })
 }
 

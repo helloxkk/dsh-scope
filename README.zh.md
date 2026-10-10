@@ -5,12 +5,12 @@
 
 [English](README.md) · **简体中文**
 
-**[DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（dsh）的上下文可视化插件** —— 每个会话的 Codex 式 `/context` 透镜 + 全历史的 GitHub 式用量热力图。
+**[DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（dsh）的上下文可视化插件** —— 每个会话的 Codex 式 `/context` 透镜 + 全历史的 ZCode 式使用统计面板。
 
 一个插件，两处 UI：
 
 1. **Context Lens**（会话头部）—— 实时 context 窗口占用率（system / tools / messages 分段构成条）、四桶会话累计、KV 缓存命中率。数据全部来自官方 `token-meter` 会话投影（`useProjection`）—— 无 RPC、无自定义协议。
-2. **用量热力图**（侧边栏底部）—— GitHub 贡献图风格的滚动 53 周 token 用量网格。点击任意日期查看四桶明细、缓存命中率、会话数、模型排行。数据来自本插件自己的回环聚合端点。
+2. **使用统计**（侧边栏底部）—— 移植自 [ZCode](https://github.com/zai-org/ZCode)「应用用量」的统计面板：顶部累计摘要条（累计 / 峰值 Token、最长聊天时长、当前与最长连续天数）、52 周 Token 活动热力图（每日 / 每周 / 累计三种模式）、近 7 日 / 近 30 日范围切换、按模型的每日趋势折线图、模型用量环形图与百分比列表。数据来自本插件自己的回环聚合端点。
 
 ## 截图
 
@@ -80,6 +80,13 @@ node scripts/install.mjs web && dsh web
 宿主半按已安装 `sessionPersistence` 实际提供的接口读取持久化日志：`0.2.x` 用 `open(id, 'read')` + `handle.read(offset)`，旧版本用 `readFrom(id, fromSeq)`；`list()` 统一归一化为 `{ header, revision }` 快照，两种形态折叠结果一致。
 
 注意 dsh 只在启动时 import 一次插件模块，**profile 配置热重载无法替换宿主半代码 —— 重新构建后需要重启 dsh**。
+
+## 致谢
+
+使用统计面板移植自 ZCode 的「应用用量」界面（[zai-org/ZCode](https://github.com/zai-org/ZCode)，Apache-2.0）。
+版面布局、热力图三种模式与月份标尺对齐规则、以及数字/日期格式化沿用上游；
+Tailwind 类名、类型定义、i18n 层与图表配色已替换为本插件自己的 CSS、纯 JavaScript 与 DSH 主题变量。
+图表使用 [Recharts](https://github.com/recharts/recharts)（MIT）。详见 [NOTICE.md](NOTICE.md)。
 
 ## 许可
 

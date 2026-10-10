@@ -1,6 +1,6 @@
 {
   "name": "dsh-scope",
-  "description": "Codex-style context visibility for DeepSeek Harness: live context-window occupancy, composition breakdown, KV-cache hit rate, and a GitHub-style 53-week usage heatmap",
+  "description": "Codex-style context visibility for DeepSeek Harness: live context-window occupancy, composition breakdown, KV-cache hit rate, and a ZCode-style usage-statistics panel (lifetime summary, 52-week token heatmap, per-model trend and donut)",
   "version": "0.1.0",
   "type": "module",
   "main": "lib/index.js",
@@ -11,6 +11,7 @@
     "docs",
     "README.md",
     "README.zh.md",
+    "NOTICE.md",
     "LICENSE"
   ],
   "exports": {
@@ -57,5 +58,9 @@
     "type": "git",
     "url": "git+https://github.com/helloxkk/dsh-scope.git"
   },
-  "author": "Ken Xiao <helloxkk@users.noreply.github.com>"
+  "author": "Ken Xiao <helloxkk@users.noreply.github.com>",
+  "dependencies": {
+    "react-dom": "18.3.1",
+    "recharts": "^3.10.1"
+  }
 }
