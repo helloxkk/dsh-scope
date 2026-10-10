@@ -28,12 +28,21 @@ Upstream files this port derives from:
 - `packages/ui/src/settings/usage-stats/appUsageChartPalette.ts`
 - `packages/ui/src/lib/tokenNumberFormat.ts`
 
-The port is adapted, not copied verbatim: ZCode's Tailwind utility classes,
-`@zcode/shared` types, `next-intl` message formatting, and `--color-usage-*`
-tokens are replaced with this project's own `dcl-` CSS classes, plain
-JavaScript, and the DeepSeek Harness design-platform aliases (`--dsw-alias-*`).
-Data is sourced from this plugin's own host-side aggregation rather than
-ZCode's snapshot API.
+The derivation is at the level of design and structure, not of files. What
+follows upstream: the panel's section order and grouping, the activity
+heatmap's three modes and its month-ruler anchoring rule, the trend chart's
+one-line-per-model series, and the model donut with its share list.
+
+The implementation is this project's own. Rendering uses plain JavaScript and
+`dcl-`-prefixed CSS over the DeepSeek Harness design-platform aliases
+(`--dsw-alias-*`); the i18n layer is this plugin's own dictionary rather than
+`next-intl`; the chart palette is mixed from the DSH theme tokens instead of
+`--color-usage-*`; and the data comes from this plugin's own host-side
+aggregation rather than ZCode's snapshot API.
+
+The code is organized differently from upstream — the pure derivations live in
+a separate `statsModel.js` with no upstream counterpart — and it is not a
+line-for-line port.
 
 Licensed under the Apache License, Version 2.0.
 See http://www.apache.org/licenses/LICENSE-2.0 for the full license text.

@@ -266,10 +266,15 @@ export async function collectUsage(ctx) {
     const attached = new Set()
     if (live !== undefined) {
       for (const session of live.list()) {
+        const liveEvents = Array.isArray(session.events) ? session.events : []
+        // A session can be attached while its log is not materialized in
+        // memory. It has nothing to fold here — but marking it handled would
+        // also make the persistence pass below skip it, silently dropping its
+        // entire history. Leave it unmarked so it is folded from disk instead.
+        if (liveEvents.length === 0) continue
         attached.add(session.id)
         const state = cache.sessions[session.id] ?? createUsageState()
         if (state.kind !== 'live') { resetFold(state); dirty = true }
-        const liveEvents = Array.isArray(session.events) ? session.events : []
         const count = liveEvents.length
         if ((state.consumed ?? 0) < count) {
           applyUsageDelta(state, liveEvents.slice(state.consumed ?? 0))
