@@ -2,8 +2,7 @@
  * ContextLens — session-header entry that visualizes the official token-meter
  * projections for the current session: window occupancy with a segmented
  * system/tools/messages bar, per-bucket session totals, and the KV-cache hit
- * rate. Targets Codex's `/context` visibility: know what fills the window
- * before compaction decides for you.
+ * rate. Know what fills the window before compaction decides for you.
  */
 import { useEffect, useRef, useState } from 'react'
 

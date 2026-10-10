@@ -1,46 +1,49 @@
 # dsh-scope
 
-[![dsh.so security](https://www.dsh.so/badges/dsh-scope.svg)](https://www.dsh.so/artifact/dsh-scope/)
+[![npm version](https://img.shields.io/npm/v/dsh-scope.svg)](https://www.npmjs.com/package/dsh-scope)
+[![npm downloads](https://img.shields.io/npm/dm/dsh-scope.svg)](https://www.npmjs.com/package/dsh-scope)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![dsh.so security](https://www.dsh.so/badges/dsh-scope.svg)](https://www.dsh.so/artifact/dsh-scope/)
 
 [English](README.md) · **简体中文**
 
-**[DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（dsh）的使用统计插件** —— 跨全部会话的 Token 用量总览面板，外加当前会话的 Codex 式 `/context` 透镜。
+**[DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（dsh）的使用统计插件** —— 跨全部会话的 Token 用量总览面板，外加当前会话的上下文透镜。
 
-DeepSeek Harness 算了大量 token 账，却一点都不给你看。`dsh-scope` 把它呈现在两处：
-
-## 使用统计（侧边栏底部）
-
-主功能，移植自 [ZCode](https://github.com/zai-org/ZCode)「应用用量」。从侧栏底部打开 —— 展开时显示文字，收起时显示图标。
+DeepSeek Harness 算了大量 token 账，却一点都不给你看。`dsh-scope` 把它呈现在两处。
 
 ![使用统计面板](docs/panel-zh.png)
 
-- **累计摘要条** —— 累计与峰值日 Token、最长聊天时长、当前与最长连续天数。
-- **Token 活动** —— 52 周热力图，支持 **每日 / 每周 / 累计** 三种模式。每日按当天用量着色；每周对每列求和；累计则跨列累加。同一张网格，既可以一眼看全年，也可以看增长趋势。
-- **时间范围** —— 近 7 日 / 近 30 日，驱动下方两个视图。
+## 功能
+
+### 使用统计（侧边栏底部）
+
+从侧栏底部打开 —— 展开时显示文字，收起时显示图标。
+
+- **累计摘要** —— 累计与峰值日 Token、最长聊天时长、当前与最长连续天数。
+- **Token 活动** —— 52 周热力图，三种模式：**每日**（按当天用量着色）、**每周**（每列求和）、**累计**（跨列累加）。同一张网格，既可以一眼看全年，也可以看增长趋势。
+- **时间范围** —— 近 7 日 / 近 30 日，驱动下方两张图。
 - **每日 Token 趋势** —— 每个模型一条折线，带可换行图例与逐日 tooltip；只有窗口期内用过的模型才会成为序列。
 - **模型用量** —— 环形图，中心显示窗口内总量，右侧为百分比列表。
 
-整个面板只向本插件自己的回环端点发一次请求。
+整个面板只向插件自己的回环端点发一次请求。
 
-## Context Lens（会话头部）
+### Context Lens（会话头部）
 
-针对你当前所在会话的 Codex 式 `/context` 读数：头部的实时占用率圆环，展开后显示窗口占用率、system / tools / messages 分段构成条、四桶会话累计与 KV 缓存命中率。数据来自官方 `token-meter` 会话投影（`useProjection`）—— 无 RPC、无自定义协议。
+针对当前会话的窗口占用读数：头部的实时占用率圆环，展开后显示 system / tools / messages 分段构成条、四桶会话累计与 KV 缓存命中率。数据来自官方 `token-meter` 会话投影（`useProjection`）—— 无 RPC、无自定义协议。
 
-## 为什么做
+## 环境要求
 
-难的部分 harness 已经做了：`token-meter` 从持久会话日志里折算出用量，slot 注册体系给插件留了挂载点。缺的是一个呈现界面。`dsh-scope` 按 harness 原生方式补上：读平台已经算好的投影、用平台的设计 token（`--dsw-alias-*`）、走平台的 slot 注册体系 —— 明暗主题零媒体查询都正确。
+- `dsh` ≥ `0.1.0-rc.6` 在 `PATH` 上（已在 `0.1.0-rc.6` 与 `0.2.0-rc.2` 验证）
+- Node.js 22.18+ 或 24.11+（仅从源码构建时需要）
 
 ## 安装
-
-需要 `dsh` ≥ `0.1.0-rc.6` 在 PATH 上。
 
 ```sh
 dsh plugin --profile <profile> add dsh-scope
 dsh web                             # 重启 dsh 加载插件
 ```
 
-`<profile>` 是你实际使用的 `~/.dsh/profiles/` 下的目录名（桌面端为 `desktop`）。
+`<profile>` 是你实际使用的 `~/.dsh/profiles/` 下的目录名 —— 桌面端为 `desktop`。
 
 <details>
 <summary>从源码安装</summary>
@@ -53,13 +56,13 @@ node scripts/install.mjs <profile>   # 例如 desktop / headless / rescue
 dsh web                              # 重启 dsh 加载插件
 ```
 
-profile 名就是 `~/.dsh/profiles/` 下你正在使用的那个目录 —— 桌面端是 `desktop`。脚本遇到不存在的 profile 会直接报错而不是猜。
+脚本遇到不存在的 profile 会直接报错而不是猜。
 
 </details>
 
-安装脚本把 `lib/`、`cordis.patch.yml`、`package.json` 复制进 profile 的 `node_modules`，并向 profile 的 `cordis.patch.yml` 追加 bundle insert（幂等，每次 rebuild 后可重复执行）。
+安装脚本把 `lib/`、`cordis.patch.yml`、`package.json` 复制进 profile 的 `node_modules`，并向 profile 的 `cordis.patch.yml` 追加 bundle insert。**幂等**，每次 rebuild 后可重复执行。
 
-### 卸载
+## 卸载
 
 ```sh
 rm -rf ~/.dsh/profiles/<profile>/node_modules/dsh-scope
@@ -69,18 +72,20 @@ rm -f ~/.dsh/storages/dsh-scope-cache.json   # 可选：清掉 fold 缓存
 
 ## 工作原理
 
-**宿主半**（`lib/index.js`）：一个只读、仅回环的端点 `GET /api/dsh-scope/days`。聚合是增量的 —— 每会话 fold 状态缓存在内存并持久化到 `~/.dsh/storages/dsh-scope-cache.json`；每次请求只 fold 上次之后新增的事件。活跃会话 fold 内存尾部；持久会话在存储后端的不透明 revision 未变时直接跳过，变化时只读新增后缀，带连续性检查，日志被截断或重写则全量重 fold。稳态成本 O(新增事件)，日志再大也不变慢。
+**宿主半**（`lib/index.js`）—— 一个只读、仅回环的端点 `GET /api/dsh-scope/days`。
 
-Fold 语义对齐 `dsh-token-meter` 的 `tokenUsage` 投影：usage 样本挂在 `assistant/chunk`（`data.chunk.type === "usage"`）或 `assistant/message`（`data.usage`）上；同一 (turn, step) 的重复样本**替换**旧值而非重复计数，并重新归因到后一事件所在的日期与模型。模型归因跟随 `assistant/message` 的 `data.message.source`，回退到最近的 `request/header` 配置。
+聚合是增量的。每会话 fold 状态缓存在内存并持久化到 `~/.dsh/storages/dsh-scope-cache.json`；每次请求只 fold 上次之后新增的事件。活跃会话 fold 内存尾部；持久会话在存储后端的不透明 revision 未变时直接跳过，变化时只读新增后缀，带连续性检查，日志被截断或重写则全量重 fold。稳态成本 O(新增事件)，日志再大也不变慢。
 
-除 token 桶外，fold 还会按天统计 `turn/start` 与 `tool/call` 事件（供热力图每周/累计模式的 tooltip 使用），并记录每个会话首末事件时间戳，用于摘要条的最长聊天时长。传输的 payload 携带每天的全部模型而非截断的 top-N，因此趋势图与环形图能覆盖所有模型。
+Fold 语义对齐 `dsh-token-meter` 的 `tokenUsage` 投影。usage 样本挂在 `assistant/chunk`（`data.chunk.type === "usage"`）或 `assistant/message`（`data.usage`）上；同一 (turn, step) 的重复样本**替换**旧值而非重复计数，并重新归因到后一事件所在的日期与模型。模型归因跟随 `assistant/message` 的 `data.message.source`，回退到最近的 `request/header` 配置。
+
+除 token 桶外，fold 还会按天统计 `turn/start` 与 `tool/call` 事件（供热力图每周/累计模式的 tooltip 使用），并记录每个会话首末事件时间戳，用于摘要的最长聊天时长。传输的 payload 携带每天的全部模型而非截断的 top-N，因此趋势图与环形图能覆盖所有模型。
 
 **浏览器半**（`lib/client.js`，通过 package.json 的 `dsh.client` 声明被发现）：
 
 - `sidebar.footer.action` 渲染使用统计触发器。面板同源 fetch `/api/dsh-scope/days`，所有视图都由这一份数据推导。
-- `conversation.session.header.actions`（order 30，排在任务列表之后）渲染透镜触发器：占用率圆环 + 实时百分比。弹出面板读取三个官方投影 —— `tokenUsage`（整个持久日志累计的四桶）、`contextPressure`（输入侧窗口压力 + 路由的 context window）、`contextBreakdown`（下一次请求的 system/tools/message 启发式构成）。
+- `conversation.session.header.actions`（order 30，排在任务列表之后）渲染透镜触发器。弹出面板读取三个官方投影 —— `tokenUsage`（整个持久日志累计的四桶）、`contextPressure`（输入侧窗口压力 + 路由的 context window）、`contextBreakdown`（下一次请求的 system/tools/message 启发式构成）。
 
-不外发任何数据：端点在任何处理前拒绝非回环调用者和非 GET 方法，不读取任何 provider 凭据。
+**不外发任何数据。** 端点在任何处理前拒绝非回环调用者和非 GET 方法，不读取任何 provider 凭据。
 
 ## 开发
 
@@ -104,15 +109,15 @@ node scripts/install.mjs <profile>     # 然后重启 dsh
 
 宿主半按已安装 `sessionPersistence` 实际提供的接口读取持久化日志：`0.2.x` 用 `open(id, 'read')` + `handle.read(offset)`，旧版本用 `readFrom(id, fromSeq)`；`list()` 统一归一化为 `{ header, revision }` 快照，两种形态折叠结果一致。
 
-注意 dsh 只在启动时 import 一次插件模块，**profile 配置热重载无法替换宿主半代码 —— 重新构建后需要重启 dsh**。
+dsh 只在启动时 import 一次插件模块，**profile 配置热重载无法替换宿主半代码 —— 重新构建后需要重启 dsh**。
 
 ## 致谢
 
 使用统计面板移植自 ZCode 的「应用用量」界面（[zai-org/ZCode](https://github.com/zai-org/ZCode)，Apache-2.0）。
-版面布局、热力图三种模式与月份标尺对齐规则、以及数字/日期格式化沿用上游；
+版面布局、热力图三种模式与月份标尺对齐规则、以及数字与日期格式化沿用上游；
 Tailwind 类名、类型定义、i18n 层与图表配色已替换为本插件自己的 CSS、纯 JavaScript 与 DSH 主题变量。
 图表使用 [Recharts](https://github.com/recharts/recharts)（MIT）。详见 [NOTICE.md](NOTICE.md)。
 
 ## 许可
 
-MIT
+[MIT](LICENSE)
