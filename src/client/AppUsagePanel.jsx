@@ -355,11 +355,30 @@ function TrendChart({ t, locale, rows, models }) {
         <ResponsiveContainer width="100%" height="100%">
           {/* Right margin leaves room for the last x-label and the end of the
               line; the y-axis gets a real width so its labels never clip. */}
-          <LineChart data={data} margin={{ top: 6, right: 14, left: 0, bottom: 2 }}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} />
-            <XAxis dataKey="label" tickLine={false} axisLine={false} interval={interval} minTickGap={6} tickMargin={6} />
-            <YAxis tickLine={false} axisLine={false} width={44} tickMargin={4} tickFormatter={(value) => formatCompactTokens(locale, value)} />
-            <Tooltip content={<TrendTip locale={locale} />} cursor={{ stroke: 'var(--dsw-alias-border-l1)' }} />
+          <LineChart data={data} margin={{ top: 6, right: 16, left: 0, bottom: 2 }}>
+            {/* Horizontal rules only, and few of them: vertical lines would
+                fence every day and compete with the data. */}
+            <CartesianGrid strokeDasharray="2 4" vertical={false} />
+            <XAxis
+              dataKey="label"
+              tickLine={false}
+              axisLine={false}
+              interval={interval}
+              minTickGap={8}
+              tickMargin={7}
+            />
+            <YAxis
+              tickLine={false}
+              axisLine={false}
+              width={42}
+              tickMargin={4}
+              tickCount={4}
+              tickFormatter={(value) => (value === 0 ? '0' : formatCompactTokens(locale, value))}
+            />
+            <Tooltip
+              content={<TrendTip locale={locale} />}
+              cursor={{ stroke: 'var(--dsw-alias-border-l1)', strokeDasharray: '2 3' }}
+            />
             {models.map((model, index) => (
               <Line
                 key={model}
@@ -368,6 +387,7 @@ function TrendChart({ t, locale, rows, models }) {
                 name={model}
                 stroke={`var(--dcl-chart-${(index % 6) + 1})`}
                 strokeWidth={2}
+                strokeLinecap="round"
                 dot={false}
                 activeDot={{ r: 3 }}
               />
@@ -393,11 +413,15 @@ function ModelDonut({ t, locale, slices, total }) {
               data={slices}
               dataKey="tokens"
               nameKey="model"
-              innerRadius="58%"
-              outerRadius="88%"
-              paddingAngle={slices.length > 1 ? 2 : 0}
-              stroke="var(--dsw-alias-bg-base)"
+              innerRadius="62%"
+              outerRadius="90%"
+              paddingAngle={slices.length > 1 ? 1.5 : 0}
+              stroke="var(--dsw-alias-fill-l1,var(--dsw-alias-bg-base))"
               strokeWidth={2}
+              /* Start at 12 o'clock: a share chart should begin where the eye
+                 expects the first slice, not at 3 o'clock. */
+              startAngle={90}
+              endAngle={-270}
             >
               {slices.map((slice) => <Cell key={slice.model} fill={slice.color} />)}
             </Pie>

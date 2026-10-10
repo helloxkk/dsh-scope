@@ -22,8 +22,10 @@ export const CSS = `
 .dcl-ring-fg{fill:none;stroke:var(--dsw-alias-state-business-primary);stroke-width:2;transition:stroke-dasharray .3s ease}
 
 .dcl-panel{position:absolute;top:calc(100% + 6px);right:0;z-index:40;width:340px;max-width:calc(100vw - 24px);display:flex;flex-direction:column;border:1px solid var(--dsw-alias-border-l1);border-radius:12px;background:var(--dsw-alias-bg-layer-2,var(--dsw-alias-bg-base));box-shadow:var(--dsw-shadow-lv2,0 8px 24px rgba(0,0,0,.16));overflow:hidden}
-.dcl-head{display:flex;align-items:center;justify-content:space-between;min-height:40px;padding:8px 14px;border-bottom:1px solid var(--dsw-alias-border-l2);flex:none}
-.dcl-title{color:var(--dsw-alias-label-primary);font-size:13px;font-weight:500;line-height:20px}
+.dcl-head{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:44px;padding:0 8px 0 16px;flex:none}
+/* Tightened tracking on the panel title: at 13px a neutral letter-spacing
+   reads slightly loose once the label is bold. */
+.dcl-title{color:var(--dsw-alias-label-primary);font-size:13px;font-weight:600;line-height:20px;letter-spacing:-0.01em}
 .dcl-body{padding:8px 14px 14px;overflow-y:auto;max-height:60vh;display:flex;flex-direction:column;gap:12px;--dsh-scrollbar-thumb:var(--dsw-alias-scrollbar-bg-l2);--dsh-scrollbar-thumb-hover:var(--dsw-alias-scrollbar-hover-l2)}
 .dcl-section{display:flex;flex-direction:column;gap:6px}
 .dcl-rowhead{display:flex;align-items:baseline;justify-content:space-between;color:var(--dsw-alias-label-tertiary);font-size:11px;line-height:16px;gap:8px}
@@ -53,19 +55,78 @@ export const CSS = `
 .dcl-hint{color:var(--dsw-alias-label-tertiary);font-size:12px;line-height:18px;margin:6px 0}
 .dcl-footnote{color:var(--dsw-alias-label-caption);font-size:10px;line-height:14px;margin:2px 0 0}
 
-/* ---- sidebar footer heatmap ---- */
+/* ---- sidebar footer usage trigger + panel ---- */
 .dcl-heatwrap{position:relative;width:100%;display:flex}
-.dcl-heatbadge{width:100%;height:34px;display:inline-flex;align-items:center;gap:8px;padding:0 8px 0 6px;border:none;border-radius:8px;background:transparent;color:var(--dsw-alias-label-primary);font:inherit;font-size:13px;cursor:pointer;overflow:hidden}
+.dcl-heatbadge{width:100%;height:34px;display:inline-flex;align-items:center;gap:8px;padding:0 8px 0 6px;border:none;border-radius:8px;background:transparent;color:var(--dsw-alias-label-primary);font:inherit;font-size:13px;cursor:pointer;overflow:hidden;transition:background-color 120ms ease-out}
 .dcl-heatbadge:hover,.dcl-heatbadge[data-open]{background:var(--dsw-alias-interactive-bg-hover-solid)}
+/* Feedback on press, not release. */
+.dcl-heatbadge:active{transform:scale(.985)}
 .dcl-heatbadge-label{text-overflow:ellipsis;white-space:nowrap;min-width:0;overflow:hidden;text-align:left}
 .dcl-heatbadge-rail{width:36px;height:36px;justify-content:center;gap:0;padding:0;border-radius:50%;flex:none}
 .dcl-iconbtn{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border:none;border-radius:6px;background:transparent;color:var(--dsw-alias-label-tertiary);cursor:pointer}
 .dcl-iconbtn:hover{color:var(--dsw-alias-label-secondary);background:var(--dsw-alias-interactive-bg-hover)}
 
-.dcl-heatpanel{position:fixed;left:12px;bottom:96px;z-index:40;width:600px;max-width:calc(100vw - 24px);display:flex;flex-direction:column;border:1px solid var(--dsw-alias-border-l1);border-radius:12px;background:var(--dsw-alias-bg-layer-2,var(--dsw-alias-bg-base));box-shadow:var(--dsw-shadow-lv2,0 8px 24px rgba(0,0,0,.16));overflow:hidden}
-.dcl-heatbody{padding:10px 14px 14px;overflow-y:auto;max-height:70vh;display:flex;flex-direction:column;gap:10px;--dsh-scrollbar-thumb:var(--dsw-alias-scrollbar-bg-l2);--dsh-scrollbar-thumb-hover:var(--dsw-alias-scrollbar-hover-l2)}
-.dcl-heaterror{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;padding:7px 8px;border-radius:8px;background:var(--dsw-alias-interactive-bg-hover-danger);color:var(--dsw-alias-state-error-primary);font-size:12px;line-height:18px}
-.dcl-retry{border:none;background:none;color:inherit;font:inherit;cursor:pointer;flex:none;padding:0;text-decoration:underline}
+/* The panel is a floating material, not a dialog: it anchors to the trigger
+   it came from and enters along the axis it will leave along, so the spatial
+   relationship between button and content stays obvious. */
+.dcl-heatpanel{
+  position:fixed;
+  left:12px;
+  bottom:96px;
+  z-index:40;
+  width:600px;
+  max-width:calc(100vw - 24px);
+  display:flex;
+  flex-direction:column;
+  border:1px solid var(--dsw-alias-border-l1);
+  border-radius:14px;
+  background:color-mix(in srgb,var(--dsw-alias-bg-layer-2,var(--dsw-alias-bg-base)) 88%,transparent);
+  backdrop-filter:blur(24px) saturate(180%);
+  -webkit-backdrop-filter:blur(24px) saturate(180%);
+  box-shadow:0 1px 1px rgba(0,0,0,.04),0 8px 24px rgba(0,0,0,.14),0 24px 56px rgba(0,0,0,.12);
+  overflow:hidden;
+  transform-origin:0 100%;
+  /* Material arrival: blur, scale and opacity move together so the surface
+     reads as a real material coming forward, not a plain fade. Critically
+     damped — no overshoot, nothing here was flicked. */
+  animation:dcl-panel-in 260ms cubic-bezier(.32,.72,0,1) both;
+}
+@keyframes dcl-panel-in{
+  from{opacity:0;transform:scale(.97) translateY(8px);backdrop-filter:blur(8px)}
+  to{opacity:1;transform:none;backdrop-filter:blur(24px) saturate(180%)}
+}
+/* Bright top edge: light catching the top face of the material. */
+.dcl-heatpanel::before{
+  content:"";
+  position:absolute;
+  inset:0 0 auto;
+  height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.5) 20%,rgba(255,255,255,.5) 80%,transparent);
+  pointer-events:none;
+}
+.dcl-heatbody{
+  padding:12px 14px 14px;
+  overflow-y:auto;
+  max-height:min(70vh,620px);
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  /* Fade content at the scroll edges instead of a hard cutoff under the
+     header, so the panel reads as one continuous surface. */
+  mask-image:linear-gradient(to bottom,transparent 0,#000 10px);
+  -webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 10px);
+  --dsh-scrollbar-thumb:var(--dsw-alias-scrollbar-bg-l2);
+  --dsh-scrollbar-thumb-hover:var(--dsw-alias-scrollbar-hover-l2);
+}
+.dcl-heaterror{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;padding:8px 10px;border-radius:9px;background:var(--dsw-alias-interactive-bg-hover-danger);color:var(--dsw-alias-state-error-primary);font-size:11px;line-height:17px}
+.dcl-retry{border:none;background:none;color:inherit;font:inherit;font-size:11px;font-weight:600;cursor:pointer;flex:none;padding:0;text-decoration:underline}
+
+@media (prefers-reduced-motion:reduce){
+  /* Cross-fade, no scale or travel. */
+  .dcl-heatpanel{animation:dcl-panel-fade 160ms ease-out both}
+  @keyframes dcl-panel-fade{from{opacity:0}to{opacity:1}}
+  .dcl-heatbadge:active{transform:none}
+}
 
 .dcl-chips{display:flex;gap:8px;flex-wrap:wrap}
 .dcl-chip{flex:1;min-width:100px;display:flex;flex-direction:column;gap:2px;padding:6px 10px;border:1px solid var(--dsw-alias-border-l2);border-radius:10px;background:var(--dsw-alias-fill-l1,transparent)}
@@ -147,14 +208,17 @@ export const CSS = `
 /* Each cell owns its leading hairline, so the divider count always matches
    the metric count without the caller interleaving separators. */
 .dcl-summary-cell{display:flex;align-items:stretch;flex:1;min-width:0}
-/* Primary metric (lifetime total) is weighted up; the other four stay equal
-   so the row reads as "one headline, four supporting facts". */
-.dcl-summary-cell:first-child{flex:1.25}
-.dcl-summary-item{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:11px 6px}
-.dcl-summary-div{width:1px;background:var(--dsw-alias-border-l2);margin:9px 0;flex:none}
+/* The headline metric takes extra width; the four supporting facts stay
+   equal, so the row reads as "one headline, four details" rather than five
+   peers. It also gives the longer Chinese labels room to sit on one line. */
+.dcl-summary-cell:first-child{flex:1.3}
+.dcl-summary-item{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:12px 5px}
+.dcl-summary-div{width:1px;background:var(--dsw-alias-border-l2);margin:10px 0;flex:none}
 .dcl-summary-value{color:var(--dsw-alias-label-primary);font-size:15px;font-weight:600;line-height:19px;letter-spacing:-0.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
-.dcl-summary-cell:first-child .dcl-summary-value{font-size:17px}
-.dcl-summary-label{color:var(--dsw-alias-label-tertiary);font-size:10px;line-height:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.dcl-summary-cell:first-child .dcl-summary-value{font-size:17px;letter-spacing:-0.03em}
+/* Labels stay on one line at their natural width: wrapping to two lines in a
+   row of five would stagger the baselines. */
+.dcl-summary-label{color:var(--dsw-alias-label-tertiary);font-size:10px;line-height:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;letter-spacing:0.01em}
 
 /* ---- segmented control ---- */
 .dcl-tabs{display:inline-flex;align-items:center;gap:2px;height:26px;padding:3px;border-radius:999px;background:var(--dsw-alias-bg-base);border:1px solid var(--dsw-alias-border-l2);flex:none}
