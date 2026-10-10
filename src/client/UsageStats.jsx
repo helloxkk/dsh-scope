@@ -19,6 +19,17 @@ const PAGES = ['usage', 'balance']
 let lastPage = 'usage'
 
 /**
+ * The usage page's natural height, remembered at module scope.
+ *
+ * It is the height the whole panel is held to, across pages and across opens.
+ * Keeping it here (rather than in component state) is what makes the panel
+ * open at full size even when the last page viewed was the short one: the
+ * anchor survives the unmount, so the balance page pins to the same height
+ * the usage page had.
+ */
+let usageHeightRef = { current: null }
+
+/**
  * @param props - `wide` from the sidebar shell + `t` from the slot runtime.
  */
 export function UsageStats({ wide, t }) {
@@ -30,14 +41,17 @@ export function UsageStats({ wide, t }) {
   const contentRef = useRef(null)
 
   /**
-   * The body keeps the tallest height any visited page has needed, for as long
-   * as the panel stays open. Pages differ in height, so without this switching
-   * to a shorter one would shrink the panel and then grow it back on the way
-   * back — the frame-to-frame resize reads as jitter. The extra space on the
-   * shorter page is the price of a stable frame.
+   * The body height is anchored on the usage page, the panel's primary and
+   * tallest view. Anchoring on "whatever page is showing" instead meant that
+   * reopening on the short balance page locked the panel low, and switching
+   * to usage then made it jump to full height.
+   *
+   * The usage page is only measurable while it is mounted, so its height is
+   * remembered at module scope: it survives the switch to balance (whose
+   * wrapper then pins to the remembered value) and to the next open.
    */
   const heightsRef = useRef({})
-  const [bodyHeight, setBodyHeight] = useState(null)
+  const [bodyHeight, setBodyHeight] = useState(usageHeightRef.current)
 
   useEffect(() => {
     if (!open) return
@@ -48,17 +62,8 @@ export function UsageStats({ wide, t }) {
     return () => { document.removeEventListener('pointerdown', close) }
   }, [open])
 
-  // Re-measure per open, and drop the remembered heights so a reopen adopts
-  // whatever the content needs now rather than a height from a previous run.
-  useEffect(() => {
-    if (open) return
-    heightsRef.current = {}
-    setBodyHeight(null)
-  }, [open])
-
-  // Track the active page's natural height. The wrapper carries the locked
-  // min-height, so its own height is not a reliable measure — read the page's
-  // root instead, which always reports what that page actually needs.
+  // Measure the mounted page. Only the usage page's height is recorded as the
+  // anchor; a shorter page never lowers it, and a taller one is not expected.
   useEffect(() => {
     if (!open) return
     const el = contentRef.current
@@ -68,9 +73,11 @@ export function UsageStats({ wide, t }) {
       const target = pageEl ?? el
       const height = target.getBoundingClientRect().height
       if (!(height > 0)) return
-      heightsRef.current[page] = height
-      const tallest = Math.max(...Object.values(heightsRef.current))
-      setBodyHeight((prev) => (prev !== null && Math.abs(prev - tallest) < 1 ? prev : Math.ceil(tallest)))
+      const rounded = Math.ceil(height)
+      if (page === 'usage' && rounded !== usageHeightRef.current) {
+        usageHeightRef.current = rounded
+        setBodyHeight(rounded)
+      }
     }
     measure()
     const observer = new ResizeObserver(measure)
