@@ -113,3 +113,15 @@ export function sumWallets(wallets) {
   }
   return [...totals.entries()].map(([currency, amount]) => ({ currency, amount }))
 }
+
+/**
+ * Short date (`2026/10/1`) for grant lists. Parsed as a whole-second UTC
+ * timestamp so the label never shifts a day across timezones.
+ */
+export function formatShortTimestamp(locale, iso) {
+  const ms = Date.parse(iso)
+  if (Number.isNaN(ms)) return String(iso)
+  return new Intl.DateTimeFormat(locale, {
+    year: 'numeric', month: 'short', day: 'numeric',
+  }).format(new Date(ms))
+}

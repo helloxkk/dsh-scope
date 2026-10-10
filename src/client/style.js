@@ -313,8 +313,6 @@ export const CSS = `
 /* A ring, not a disc: it stands in for the donut. */
 .dcl-skel-ring{width:100%;height:100%;border-radius:50%;border:16px solid var(--dsw-alias-interactive-bg-hover);animation:dcl-skel-pulse 1500ms ease-in-out infinite}
 /* Balance placeholders, sized to the type they stand in for. */
-.dcl-skel-balance-amount{height:44px;width:52%;border-radius:6px}
-.dcl-skel-balance-note{height:17px;width:34%}
 .dcl-skel-balance-row{height:19px;width:70%}
 @media (prefers-reduced-motion:reduce){
   .dcl-skel,.dcl-skel-ring{animation:none;opacity:.7}
@@ -344,11 +342,8 @@ export const CSS = `
 .dcl-tip-val{color:var(--dsw-alias-label-primary);font-weight:600}
 
 /* ---- balance page ---- */
-/* The headline figure is the point of the page, so it gets the only
-   display-sized type in the panel. */
-.dcl-balance-hero{display:flex;flex-direction:column;gap:6px}
-.dcl-balance-amount{color:var(--dsw-alias-label-primary);font-size:40px;font-weight:600;line-height:44px;letter-spacing:-0.03em}
-.dcl-balance-amount-note{color:var(--dsw-alias-label-tertiary);font-size:var(--dcl-fs-caption);line-height:17px}
+/* The headline figure lives in the summary strip now, shared with the usage
+   page's rhythm; the balance card below itemizes every wallet. */
 .dcl-balance-rows{display:flex;flex-direction:column;margin-top:4px}
 .dcl-balance-row{display:flex;align-items:baseline;justify-content:space-between;gap:14px;padding:7px 0;border-bottom:1px solid var(--dsw-alias-border-l2);font-size:var(--dcl-fs-value);line-height:19px}
 .dcl-balance-row:last-child{border-bottom:none}
@@ -378,6 +373,23 @@ export const CSS = `
 .dcl-grant-expiry[data-soon]{color:var(--dsw-alias-state-warn-primary);font-weight:600}
 .dcl-grant-value{color:var(--dsw-alias-label-primary);font-weight:600;white-space:nowrap}
 .dcl-grants-note{color:var(--dsw-alias-label-caption);font-size:var(--dcl-fs-micro);line-height:15px;padding-top:4px}
+
+/* ---- account card ---- */
+/* Avatar plus identity, laid out like the official account menu: picture on
+   the left, name over contact on the right. */
+.dcl-account{display:flex;align-items:center;gap:12px;min-width:0}
+.dcl-account-avatar{flex:none;width:38px;height:38px;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-tertiary);overflow:hidden}
+.dcl-account-avatar img{width:100%;height:100%;object-fit:cover;display:block}
+.dcl-account-copy{display:flex;flex-direction:column;gap:2px;min-width:0}
+.dcl-account-name{color:var(--dsw-alias-label-primary);font-size:var(--dcl-fs-value);font-weight:600;line-height:18px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dcl-account-contact{color:var(--dsw-alias-label-tertiary);font-size:var(--dcl-fs-caption);line-height:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* Platform page links sit under the identity, left-aligned so the card reads
+   as one block: identity first, actions second. */
+.dcl-account-links{display:flex;flex-wrap:wrap;gap:8px}
+/* Skeleton pieces for the account card, sized to the type they stand in for. */
+.dcl-skel-avatar{width:38px;height:38px;border-radius:50%;flex:none}
+.dcl-skel-account-name{height:18px;width:120px}
+.dcl-skel-account-contact{height:16px;width:170px}
 .dcl-link{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 13px;border:1px solid var(--dsw-alias-border-l2);border-radius:9px;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-secondary);font:inherit;font-size:var(--dcl-fs-caption);text-decoration:none;cursor:pointer;transition:color 120ms ease-out}
 .dcl-link:hover{color:var(--dsw-alias-label-primary)}
 `

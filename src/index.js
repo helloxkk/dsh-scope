@@ -213,11 +213,17 @@ function packageVersion() {
 }
 
 /**
- * Read the signed-in DeepSeek account's wallet balances.
+ * Read the signed-in DeepSeek account's wallet balances and profile.
  *
  * The account service is optional: profiles without the account platform (for
  * example a headless one) simply have no `deepseekAccount`, which is reported
  * as `unavailable` rather than treated as an error.
+ *
+ * Beside the wallets, two strictly best-effort enrichments ride along and must
+ * never take the balance down with them:
+ *   - profile (avatar / name / contact) for the account card;
+ *   - state links (platform usage / top-up pages), which `getState` derives
+ *     locally from the configured origin — no network round trip.
  *
  * @param ctx - host root context.
  * @param req - the inbound request, used for the caller's locale.
@@ -239,6 +245,42 @@ async function collectBalance(ctx, req) {
   // null means "no usable credential" — signed out or the token was rejected.
   if (result === null || result === undefined) return { status: 'signed-out' }
   if (result.status !== 'ready') return { status: 'failed' }
+
+  // Account identity for the account card: avatar, display name, contact.
+  // null (signed out mid-request) or a failure simply omits the card data.
+  let profile = null
+  try {
+    if (typeof account.getProfile === 'function') {
+      const details = await withBalanceLock(() => account.getProfile(client))
+      if (details?.status === 'ready' && details.value !== null && typeof details.value === 'object') {
+        profile = {
+          name: details.value.name ?? null,
+          contact: details.value.contact ?? null,
+          avatarUrl: details.value.avatarUrl ?? null,
+        }
+      }
+    }
+  } catch (error) {
+    ctx.logger.warn(`dsh-scope: profile unavailable: ${String(error)}`)
+  }
+
+  // Platform page links (usage / top-up). getState builds these from the
+  // configured origin without a network call, so they are cheap and cannot
+  // meaningfully fail; still guarded so a plugin oddity stays harmless.
+  let links = null
+  try {
+    if (typeof account.getState === 'function') {
+      const state = await account.getState()
+      if (state?.links !== null && typeof state?.links === 'object') {
+        links = {
+          usageUrl: typeof state.links.usageUrl === 'string' ? state.links.usageUrl : null,
+          topUpUrl: typeof state.links.topUpUrl === 'string' ? state.links.topUpUrl : null,
+        }
+      }
+    }
+  } catch (error) {
+    ctx.logger.warn(`dsh-scope: account state unavailable: ${String(error)}`)
+  }
 
   // Bonus expiry is not part of the wallet summary — that endpoint carries
   // only currency and amount. The platform exposes expiry on the bonus
@@ -267,6 +309,10 @@ async function collectBalance(ctx, req) {
     status: 'ready',
     wallets: result.value ?? [],
     bonusWallets: result.bonusWallets ?? [],
+    // Account card identity, when the profile query succeeded.
+    profile,
+    // Platform page links (usage / top-up), derived locally by the service.
+    links,
     // Grants with their expiry, when the platform reports them. null means
     // "no unacknowledged bonus grants", which is not an error.
     bonusGrants,

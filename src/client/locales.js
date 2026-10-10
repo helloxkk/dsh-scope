@@ -67,10 +67,16 @@ export const zh = {
   'balance.orderHint': '消费时优先扣减赠送余额，再扣现金余额。',
   'balance.grantsTitle': '赠金',
   'balance.grantsNote': '仅列出平台尚未确认的赠金；已确认过的请到平台查看。',
+  'balance.soonestExpiry': '最近过期',
   'balance.expired': '已过期',
   'balance.expiresToday': '今天过期',
   'balance.expiresSoon': '{n} 天后过期',
   'balance.expiresIn': '{n} 天后过期',
+  'balance.accountTitle': '账号',
+  'balance.unnamed': '未命名用户',
+  'balance.noContact': '未绑定联系方式',
+  'balance.usageLink': '平台用量页',
+  'balance.topUpLink': '去充值',
 }
 
 /** en dictionary. */
@@ -142,10 +148,16 @@ export const en = {
   'balance.orderHint': 'Bonus balance is spent before cash.',
   'balance.grantsTitle': 'Bonus grants',
   'balance.grantsNote': 'Only grants the platform has not yet acknowledged are listed; check the platform for the rest.',
+  'balance.soonestExpiry': 'Next expiry',
   'balance.expired': 'Expired',
   'balance.expiresToday': 'Expires today',
   'balance.expiresSoon': 'Expires in {n}d',
   'balance.expiresIn': 'Expires in {n} days',
+  'balance.accountTitle': 'Account',
+  'balance.unnamed': 'Unnamed user',
+  'balance.noContact': 'No contact info',
+  'balance.usageLink': 'Platform usage',
+  'balance.topUpLink': 'Top up',
 }
 
 /** Locale namespace owned by this plugin. */
