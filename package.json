@@ -1,7 +1,7 @@
 {
   "name": "dsh-scope",
   "description": "Usage statistics for DeepSeek Harness: a lifetime token dashboard (52-week activity heatmap with daily/weekly/cumulative modes, per-model trend and donut, streaks) plus a context lens for the current session",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "type": "module",
   "main": "lib/index.js",
   "files": [
