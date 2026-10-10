@@ -103,88 +103,153 @@ export const CSS = `
 .dcl-modelname{color:var(--dsw-alias-label-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--dsw-font-mono,ui-monospace,monospace)}
 
 /* ---- usage stats panel ---- */
-/* Six model series colors, mixed from the design-platform aliases so light
-   and dark both stay correct without a media query or a second palette. */
-.dcl-stats{--dcl-chart-1:var(--dsw-alias-state-business-primary);--dcl-chart-2:var(--dsw-alias-state-success-primary);--dcl-chart-3:color-mix(in srgb,var(--dsw-alias-state-business-primary) 55%,var(--dsw-alias-state-success-primary));--dcl-chart-4:var(--dsw-alias-state-error-primary);--dcl-chart-5:var(--dsw-alias-state-warn-primary);--dcl-chart-6:var(--dsw-alias-label-tertiary)}
+/* One palette source: series colors mixed from the design-platform aliases,
+   so light and dark stay correct without a media query or a second palette. */
+.dcl-stats{
+  --dcl-chart-1:var(--dsw-alias-state-business-primary);
+  --dcl-chart-2:var(--dsw-alias-state-success-primary);
+  --dcl-chart-3:color-mix(in srgb,var(--dsw-alias-state-business-primary) 55%,var(--dsw-alias-state-success-primary));
+  --dcl-chart-4:var(--dsw-alias-state-error-primary);
+  --dcl-chart-5:var(--dsw-alias-state-warn-primary);
+  --dcl-chart-6:var(--dsw-alias-label-tertiary);
+  /* Spacing rhythm: everything in the panel is a multiple of these, so the
+     vertical cadence stays even instead of accumulating one-off paddings. */
+  --dcl-gap:12px;
+  --dcl-pad:14px;
+  --dcl-radius:12px;
+  display:flex;
+  flex-direction:column;
+  gap:var(--dcl-gap);
+  /* Tabular figures throughout: numbers are compared column to column, and
+     proportional digits make them jitter as values change. */
+  font-variant-numeric:tabular-nums;
+  letter-spacing:-0.005em;
+}
 
-.dcl-summary{display:flex;align-items:stretch;border-radius:10px;background:var(--dsw-alias-fill-l1,var(--dsw-alias-interactive-bg-hover));overflow:hidden}
+/* Grouping container. A hairline plus a translucent fill reads as a raised
+   card; without both, the card dissolves into the popover background. */
+.dcl-card{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  padding:var(--dcl-pad);
+  border-radius:var(--dcl-radius);
+  background:var(--dsw-alias-fill-l1,var(--dsw-alias-interactive-bg-hover));
+  border:1px solid var(--dsw-alias-border-l2);
+}
+.dcl-card-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;min-height:24px}
+/* Titles carry hierarchy through weight, not size: a bigger heading would
+   compete with the data it labels. */
+.dcl-card-title{color:var(--dsw-alias-label-primary);font-size:12px;font-weight:600;line-height:18px}
+
+/* ---- summary ---- */
+.dcl-summary{display:flex;align-items:stretch;border-radius:var(--dcl-radius);background:var(--dsw-alias-fill-l1,var(--dsw-alias-interactive-bg-hover));border:1px solid var(--dsw-alias-border-l2);overflow:hidden}
 /* Each cell owns its leading hairline, so the divider count always matches
    the metric count without the caller interleaving separators. */
 .dcl-summary-cell{display:flex;align-items:stretch;flex:1;min-width:0}
-.dcl-summary-item{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:9px 6px}
-.dcl-summary-div{width:1px;background:var(--dsw-alias-border-l2);margin:8px 0;flex:none}
-.dcl-summary-value{color:var(--dsw-alias-label-primary);font-size:14px;font-weight:600;line-height:19px;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
-.dcl-summary-label{color:var(--dsw-alias-label-tertiary);font-size:10px;line-height:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+/* Primary metric (lifetime total) is weighted up; the other four stay equal
+   so the row reads as "one headline, four supporting facts". */
+.dcl-summary-cell:first-child{flex:1.25}
+.dcl-summary-item{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:11px 6px}
+.dcl-summary-div{width:1px;background:var(--dsw-alias-border-l2);margin:9px 0;flex:none}
+.dcl-summary-value{color:var(--dsw-alias-label-primary);font-size:15px;font-weight:600;line-height:19px;letter-spacing:-0.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.dcl-summary-cell:first-child .dcl-summary-value{font-size:17px}
+.dcl-summary-label{color:var(--dsw-alias-label-tertiary);font-size:10px;line-height:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 
-.dcl-sectioncard{display:flex;flex-direction:column;gap:8px;padding:10px 12px;border-radius:10px;background:var(--dsw-alias-fill-l1,var(--dsw-alias-interactive-bg-hover))}
-.dcl-sectionhead{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
-.dcl-sectiontitle{color:var(--dsw-alias-label-primary);font-size:12px;font-weight:500;line-height:18px}
+/* ---- segmented control ---- */
+.dcl-tabs{display:inline-flex;align-items:center;gap:2px;height:26px;padding:3px;border-radius:999px;background:var(--dsw-alias-bg-base);border:1px solid var(--dsw-alias-border-l2);flex:none}
+.dcl-tab{height:20px;padding:0 10px;border:none;border-radius:999px;background:transparent;color:var(--dsw-alias-label-tertiary);font:inherit;font-size:11px;font-weight:500;line-height:20px;cursor:pointer;white-space:nowrap;transition:color 120ms ease-out,background-color 120ms ease-out}
+.dcl-tab:hover{color:var(--dsw-alias-label-primary)}
+/* Feedback on press, not on release. */
+.dcl-tab:active{transform:scale(.96)}
+.dcl-tab[data-active]{background:var(--dsw-alias-interactive-bg-hover-solid,var(--dsw-alias-bg-layer-2));color:var(--dsw-alias-label-primary);font-weight:600}
 
-.dcl-tabs{display:inline-flex;align-items:center;gap:2px;height:24px;padding:2px;border-radius:999px;background:var(--dsw-alias-bg-layer-1,var(--dsw-alias-bg-base));flex:none}
-.dcl-tab{height:20px;padding:0 9px;border:none;border-radius:999px;background:transparent;color:var(--dsw-alias-label-tertiary);font:inherit;font-size:11px;line-height:20px;cursor:pointer;white-space:nowrap}
-.dcl-tab:hover{color:var(--dsw-alias-label-secondary)}
-.dcl-tab[data-active]{background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font-weight:500;box-shadow:var(--dsw-shadow-lv1,0 1px 2px rgba(0,0,0,.08))}
-
-/* Square cells on a 1fr column track, so the whole year always fits the
-   popover width instead of introducing a second horizontal scrollbar. */
-.dcl-hm{display:flex;flex-direction:column;gap:4px}
-.dcl-hm-months{display:grid;gap:3px;height:13px;margin-left:22px}
-.dcl-hm-month{font-size:9px;line-height:13px;color:var(--dsw-alias-label-caption);white-space:nowrap;overflow:visible}
+/* ---- activity grid ---- */
+.dcl-hm{display:flex;flex-direction:column;gap:5px}
+/* The ruler spans exactly the column track, offset by the weekday gutter, so
+   labels sit over the columns they name. */
+.dcl-hm-months{display:grid;gap:3px;height:12px;margin-left:22px}
+.dcl-hm-month{font-size:9px;line-height:12px;color:var(--dsw-alias-label-caption);white-space:nowrap;overflow:visible;letter-spacing:0.01em}
 .dcl-hm-body{display:flex;gap:3px}
-.dcl-hm-days{display:flex;flex-direction:column;gap:3px;width:19px;flex:none;justify-content:space-between}
-.dcl-hm-day{font-size:9px;line-height:1;color:var(--dsw-alias-label-caption);height:0;display:flex;align-items:center}
+.dcl-hm-days{display:flex;flex-direction:column;justify-content:space-between;width:19px;flex:none;padding:1px 0}
+.dcl-hm-day{font-size:9px;line-height:9px;color:var(--dsw-alias-label-caption);display:flex;align-items:center}
 .dcl-hm-cols{display:grid;gap:3px;flex:1;min-width:0}
 .dcl-hm-col{display:flex;flex-direction:column;gap:3px;min-width:0}
-.dcl-hm-cell{width:100%;aspect-ratio:1;min-width:0;border-radius:3px;border:1px solid transparent;padding:0;cursor:pointer;background:var(--dsw-alias-interactive-bg-hover)}
-.dcl-hm-cell[data-has-usage]{border-color:var(--dsw-alias-border-l2)}
-.dcl-hm-cell:hover{outline:1.5px solid var(--dsw-alias-label-secondary);outline-offset:-1px}
-.dcl-hm-cell[data-selected]{outline:2px solid var(--dsw-alias-state-business-primary);outline-offset:-2px}
+.dcl-hm-cell{width:100%;aspect-ratio:1;min-width:0;border-radius:3px;border:1px solid transparent;padding:0;cursor:pointer;background:var(--dsw-alias-interactive-bg-hover);transition:transform 120ms ease-out}
+/* Scale on hover rather than an outline: an outline on a 6px cell reads as a
+   border change and shifts perceived weight across the row. */
+.dcl-hm-cell:hover{transform:scale(1.18);border-color:var(--dsw-alias-label-secondary)}
+.dcl-hm-cell[data-selected]{border-color:var(--dsw-alias-state-business-primary);box-shadow:0 0 0 1px var(--dsw-alias-state-business-primary)}
 .dcl-hm-l0{background:var(--dsw-alias-interactive-bg-hover)}
 .dcl-hm-l1{background:color-mix(in srgb,var(--dsw-alias-state-business-primary) 25%,var(--dsw-alias-interactive-bg-hover))}
 .dcl-hm-l2{background:color-mix(in srgb,var(--dsw-alias-state-business-primary) 50%,var(--dsw-alias-interactive-bg-hover))}
 .dcl-hm-l3{background:color-mix(in srgb,var(--dsw-alias-state-business-primary) 75%,var(--dsw-alias-interactive-bg-hover))}
 .dcl-hm-l4{background:var(--dsw-alias-state-business-primary)}
 
-.dcl-chart{width:100%;height:190px}
-.dcl-chart-lg{width:100%;height:200px}
-.dcl-legend{display:flex;flex-wrap:wrap;gap:4px 12px;justify-content:center;padding:2px 0}
-.dcl-legend-item{display:inline-flex;align-items:center;gap:5px;font-size:10px;line-height:14px;color:var(--dsw-alias-label-secondary);max-width:100%}
-.dcl-legend-dot{width:7px;height:7px;border-radius:50%;flex:none}
-.dcl-legend-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* ---- charts ---- */
+.dcl-chart{width:100%;height:172px}
+.dcl-legend{display:flex;flex-wrap:wrap;gap:5px 14px;justify-content:center;padding:0 0 2px}
+.dcl-legend-item{display:inline-flex;align-items:center;gap:6px;font-size:10px;line-height:14px;color:var(--dsw-alias-label-secondary);max-width:100%}
+.dcl-legend-dot{width:8px;height:2px;border-radius:1px;flex:none}
+.dcl-legend-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--dsw-font-mono,ui-monospace,monospace)}
 
 /* Donut beside a ranked list; the list keeps its own column so long model
    names truncate instead of reflowing the chart. */
-.dcl-donut{display:grid;grid-template-columns:minmax(0,150px) minmax(0,1fr);gap:10px;align-items:center}
-.dcl-donut-wrap{position:relative;width:100%;height:150px}
-.dcl-donut-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;pointer-events:none;text-align:center;padding:0 18px}
-.dcl-donut-total{color:var(--dsw-alias-label-primary);font-size:13px;font-weight:600;line-height:17px;font-variant-numeric:tabular-nums;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.dcl-donut-unit{color:var(--dsw-alias-label-tertiary);font-size:10px;line-height:13px}
+.dcl-donut{display:grid;grid-template-columns:minmax(0,132px) minmax(0,1fr);gap:16px;align-items:center}
+.dcl-donut-wrap{position:relative;width:100%;height:132px}
+.dcl-donut-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;pointer-events:none;text-align:center;padding:0 26px}
+.dcl-donut-total{color:var(--dsw-alias-label-primary);font-size:15px;font-weight:600;line-height:18px;letter-spacing:-0.02em;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dcl-donut-unit{color:var(--dsw-alias-label-tertiary);font-size:9px;line-height:12px;text-transform:uppercase;letter-spacing:0.06em}
 .dcl-modellist2{display:flex;flex-direction:column;min-width:0}
-.dcl-modelitem{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:2px 7px;padding:5px 0;border-bottom:1px solid var(--dsw-alias-border-l2)}
+.dcl-modelitem{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:baseline;gap:1px 8px;padding:6px 0;border-bottom:1px solid var(--dsw-alias-border-l2)}
 .dcl-modelitem:last-child{border-bottom:none}
-.dcl-modelitem-dot{width:8px;height:8px;border-radius:2px;flex:none}
+.dcl-modelitem-dot{width:8px;height:8px;border-radius:2px;flex:none;align-self:center}
 .dcl-modelitem-name{color:var(--dsw-alias-label-primary);font-size:11px;line-height:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--dsw-font-mono,ui-monospace,monospace)}
-.dcl-modelitem-pct{color:var(--dsw-alias-label-tertiary);font-size:11px;line-height:15px;font-variant-numeric:tabular-nums;text-align:right}
-.dcl-modelitem-tokens{grid-column:2;color:var(--dsw-alias-label-tertiary);font-size:10px;line-height:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dcl-modelitem-pct{color:var(--dsw-alias-label-primary);font-size:11px;font-weight:600;line-height:15px;text-align:right}
+.dcl-modelitem-tokens{grid-column:2;color:var(--dsw-alias-label-tertiary);font-size:10px;line-height:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
-.dcl-refresh{display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 11px;border:1px solid var(--dsw-alias-border-l2);border-radius:8px;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-secondary);font:inherit;font-size:12px;cursor:pointer}
-.dcl-refresh:hover{color:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-border-l1)}
-.dcl-refresh:disabled{opacity:.55;cursor:default}
+/* ---- controls & states ---- */
+.dcl-refresh{display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 11px;border:1px solid var(--dsw-alias-border-l2);border-radius:8px;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-secondary);font:inherit;font-size:12px;cursor:pointer;transition:color 120ms ease-out,background-color 120ms ease-out}
+.dcl-refresh:hover{color:var(--dsw-alias-label-primary)}
+.dcl-refresh:active{transform:scale(.97)}
+.dcl-refresh:disabled{opacity:.5;cursor:default}
 /* Header variant: shorter, borderless chrome that reads as a title-row action. */
 .dcl-refresh-head{height:24px;padding:0 8px;border-color:transparent;background:transparent;font-size:11px;gap:4px}
-.dcl-refresh-head:hover{background:var(--dsw-alias-interactive-bg-hover);border-color:transparent}
-.dcl-empty{display:flex;flex-direction:column;align-items:center;gap:4px;padding:24px 14px;border:1px dashed var(--dsw-alias-border-l2);border-radius:10px;text-align:center}
-.dcl-empty-title{color:var(--dsw-alias-label-primary);font-size:12px;font-weight:500;line-height:18px}
-.dcl-empty-desc{color:var(--dsw-alias-label-tertiary);font-size:11px;line-height:16px}
+.dcl-refresh-head:hover{background:var(--dsw-alias-interactive-bg-hover)}
+.dcl-refresh-head[disabled] svg{animation:dcl-spin 900ms linear infinite}
+@keyframes dcl-spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){
+  .dcl-refresh-head[disabled] svg{animation:none}
+  .dcl-tab:active,.dcl-refresh:active{transform:none}
+  .dcl-hm-cell{transition:none}
+  .dcl-hm-cell:hover{transform:none}
+}
+
+.dcl-empty{display:flex;flex-direction:column;align-items:center;gap:5px;padding:26px 16px;border:1px dashed var(--dsw-alias-border-l2);border-radius:var(--dcl-radius);text-align:center}
+.dcl-empty-title{color:var(--dsw-alias-label-primary);font-size:12px;font-weight:600;line-height:18px}
+.dcl-empty-desc{color:var(--dsw-alias-label-tertiary);font-size:11px;line-height:16px;max-width:34ch}
 
 /* Recharts renders inline SVG; these keep grid/axis on theme tokens. */
 .dcl-chart .recharts-cartesian-grid line{stroke:var(--dsw-alias-border-l2)}
-.dcl-chart .recharts-cartesian-axis-line,.dcl-chart .recharts-cartesian-axis-tick-line{stroke:var(--dsw-alias-border-l2)}
+.dcl-chart .recharts-cartesian-axis-line,.dcl-chart .recharts-cartesian-axis-tick-line{stroke:transparent}
 .dcl-chart .recharts-text{fill:var(--dsw-alias-label-caption);font-size:10px}
-.dcl-tip{border:1px solid var(--dsw-alias-border-l1);border-radius:8px;background:var(--dsw-alias-bg-overlay,var(--dsw-alias-bg-layer-2));box-shadow:var(--dsw-shadow-lv2,0 8px 24px rgba(0,0,0,.16));padding:6px 9px;font-size:11px;line-height:16px}
-.dcl-tip-label{color:var(--dsw-alias-label-tertiary);margin-bottom:3px}
-.dcl-tip-row{display:flex;align-items:center;gap:6px;justify-content:space-between}
-.dcl-tip-name{display:inline-flex;align-items:center;gap:5px;color:var(--dsw-alias-label-secondary);min-width:0}
+.dcl-chart .recharts-curve.recharts-tooltip-cursor{stroke:var(--dsw-alias-border-l1)}
+/* Translucent floating layer: the tooltip is a material over content, not an
+   opaque box competing with it. */
+.dcl-tip{
+  border:1px solid var(--dsw-alias-border-l1);
+  border-radius:9px;
+  background:color-mix(in srgb,var(--dsw-alias-bg-overlay,var(--dsw-alias-bg-layer-2)) 86%,transparent);
+  backdrop-filter:blur(12px) saturate(150%);
+  -webkit-backdrop-filter:blur(12px) saturate(150%);
+  box-shadow:var(--dsw-shadow-lv2,0 8px 24px rgba(0,0,0,.16));
+  padding:7px 10px;
+  font-size:11px;
+  line-height:16px;
+}
+.dcl-tip-label{color:var(--dsw-alias-label-tertiary);margin-bottom:4px;font-size:10px}
+.dcl-tip-row{display:flex;align-items:center;gap:8px;justify-content:space-between}
+.dcl-tip-name{display:inline-flex;align-items:center;gap:6px;color:var(--dsw-alias-label-secondary);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--dsw-font-mono,ui-monospace,monospace);font-size:10px}
 .dcl-tip-dot{width:7px;height:7px;border-radius:50%;flex:none}
-.dcl-tip-val{color:var(--dsw-alias-label-primary);font-variant-numeric:tabular-nums;font-weight:500}
+.dcl-tip-val{color:var(--dsw-alias-label-primary);font-weight:600}
 `

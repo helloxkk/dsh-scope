@@ -202,7 +202,19 @@ export function buildModelShares(days, rangeDays) {
   return { slices, total }
 }
 
-/** Month labels for the grid ruler: consecutive columns sharing a month merge. */
+/**
+ * Month labels for the grid ruler.
+ *
+ * Consecutive columns in the same month merge into one span. A rolling year
+ * starts and ends mid-month, so the first and last spans are partial and can
+ * carry the same month name (a trailing Oct 2026 after a leading Oct 2025).
+ * Rendering both would read as a duplicated label, so those partial edges are
+ * withheld — the grid is a rolling window, and anchoring it on the left edge
+ * would imply a calendar year it is not.
+ *
+ * @param columns - grid columns, each with the date its label anchors to.
+ * @param formatMonth - `(dateKey) => string` month label for the active locale.
+ */
 export function buildMonthSpans(columns, formatMonth) {
   const spans = []
   for (const column of columns) {
@@ -210,6 +222,13 @@ export function buildMonthSpans(columns, formatMonth) {
     const last = spans[spans.length - 1]
     if (last !== undefined && last.label === label) last.span += 1
     else spans.push({ key: column.monthDate, label, span: 1 })
+  }
+  if (spans.length === 0) return spans
+  // Withhold a partial edge month when the same name already appears at the
+  // other end; the span stays in the layout so column widths are unaffected.
+  if (spans.length > 1 && spans[0].label === spans[spans.length - 1].label) {
+    spans[0].label = ''
+    spans[0].suppressed = true
   }
   return spans
 }

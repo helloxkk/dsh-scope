@@ -121,7 +121,7 @@ export function AppUsagePanel({ t, locale, onRefreshState }) {
       ) : null}
 
       {hasUsage && grid.columns.length > 0 ? (
-        <section className="dcl-sectioncard">
+        <section className="dcl-card">
           <SectionHead
             title={t('stats.tokenActivity')}
             options={HEATMAP_MODES}
@@ -133,8 +133,8 @@ export function AppUsagePanel({ t, locale, onRefreshState }) {
         </section>
       ) : null}
 
-      <div className="dcl-sectionhead">
-        <div className="dcl-sectiontitle">{t('stats.rangeTitle')}</div>
+      <div className="dcl-card-head">
+        <div className="dcl-card-title">{t('stats.rangeTitle')}</div>
         <Tabs
           options={RANGES}
           value={range}
@@ -147,12 +147,12 @@ export function AppUsagePanel({ t, locale, onRefreshState }) {
         <EmptyState title={t('stats.emptyTitle')} description={t('stats.emptyDescription')} />
       ) : (
         <>
-          <section className="dcl-sectioncard">
-            <div className="dcl-sectiontitle">{t('stats.dailyTrend')}</div>
+          <section className="dcl-card">
+            <div className="dcl-card-title">{t('stats.dailyTrend')}</div>
             <TrendChart t={t} locale={locale} rows={trend.rows} models={trend.models} />
           </section>
-          <section className="dcl-sectioncard">
-            <div className="dcl-sectiontitle">{t('stats.modelUsage')}</div>
+          <section className="dcl-card">
+            <div className="dcl-card-title">{t('stats.modelUsage')}</div>
             <ModelDonut t={t} locale={locale} slices={donut.slices} total={donut.total} />
           </section>
         </>
@@ -202,8 +202,8 @@ function Tabs({ options, value, onChange, labelOf }) {
 /** Section title with an optional trailing control. */
 function SectionHead({ title, options, value, onChange, labelOf }) {
   return (
-    <div className="dcl-sectionhead">
-      <div className="dcl-sectiontitle">{title}</div>
+    <div className="dcl-card-head">
+      <div className="dcl-card-title">{title}</div>
       {options ? <Tabs options={options} value={value} onChange={onChange} labelOf={labelOf} /> : null}
     </div>
   )
@@ -271,7 +271,8 @@ function ActivityGrid({ t, locale, columns, months, mode }) {
       <div className="dcl-hm-months" style={{ gridTemplateColumns: `repeat(${columns.length},minmax(0,1fr))` }}>
         {months.map((month) => (
           <div key={month.key} className="dcl-hm-month" style={{ gridColumn: `span ${month.span}` }}>
-            {/* A single-column month has no room for a label; skip it rather than clip. */}
+            {/* A single-column month has no room for a label, and a partial
+                edge month is withheld when its name repeats at the far end. */}
             {month.span >= 2 ? month.label : ''}
           </div>
         ))}
@@ -352,11 +353,13 @@ function TrendChart({ t, locale, rows, models }) {
       </div>
       <div className="dcl-chart">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data} margin={{ top: 8, right: 10, left: -14, bottom: 0 }}>
+          {/* Right margin leaves room for the last x-label and the end of the
+              line; the y-axis gets a real width so its labels never clip. */}
+          <LineChart data={data} margin={{ top: 6, right: 14, left: 0, bottom: 2 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
-            <XAxis dataKey="label" tickLine={false} axisLine={false} interval={interval} minTickGap={4} />
-            <YAxis tickLine={false} axisLine={false} width={48} tickFormatter={(value) => formatCompactTokens(locale, value)} />
-            <Tooltip content={<TrendTip locale={locale} />} />
+            <XAxis dataKey="label" tickLine={false} axisLine={false} interval={interval} minTickGap={6} tickMargin={6} />
+            <YAxis tickLine={false} axisLine={false} width={44} tickMargin={4} tickFormatter={(value) => formatCompactTokens(locale, value)} />
+            <Tooltip content={<TrendTip locale={locale} />} cursor={{ stroke: 'var(--dsw-alias-border-l1)' }} />
             {models.map((model, index) => (
               <Line
                 key={model}
