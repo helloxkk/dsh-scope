@@ -68,14 +68,22 @@ export const CSS = `
 
 /* The panel is a floating material, not a dialog: it anchors to the trigger
    it came from and enters along the axis it will leave along, so the spatial
-   relationship between button and content stays obvious. */
+   relationship between button and content stays obvious.
+   Sizing is content-driven and clamped to the viewport, so a tall window
+   shows every section at once and a short one scrolls — no fixed height to
+   outgrow and no media queries to maintain. */
 .dcl-heatpanel{
   position:fixed;
   left:12px;
   bottom:96px;
   z-index:40;
-  width:600px;
+  /* Grows with the window up to a comfortable reading measure. */
+  width:clamp(340px,48vw,760px);
   max-width:calc(100vw - 24px);
+  /* Use every pixel of vertical space between the top of the window and the
+     trigger. An arbitrary hard cap here is what forced scrolling on tall
+     windows — the viewport already knows how much room there is. */
+  max-height:calc(100vh - 108px);
   display:flex;
   flex-direction:column;
   border:1px solid var(--dsw-alias-border-l1);
@@ -104,17 +112,22 @@ export const CSS = `
   background:linear-gradient(90deg,transparent,rgba(255,255,255,.5) 20%,rgba(255,255,255,.5) 80%,transparent);
   pointer-events:none;
 }
+/* flex:1 plus min-height:0 lets the body take exactly the height its content
+   needs and only shrink (and scroll) when the panel hits its viewport cap.
+   A fixed max-height here was what forced scrolling on tall windows. */
 .dcl-heatbody{
-  padding:12px 14px 14px;
+  flex:1 1 auto;
+  min-height:0;
+  padding:12px 16px 14px;
   overflow-y:auto;
-  max-height:min(70vh,620px);
+  overscroll-behavior:contain;
   display:flex;
   flex-direction:column;
   gap:12px;
-  /* Fade content at the scroll edges instead of a hard cutoff under the
+  /* Fade content at the scroll edge instead of a hard cutoff under the
      header, so the panel reads as one continuous surface. */
-  mask-image:linear-gradient(to bottom,transparent 0,#000 10px);
-  -webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 10px);
+  mask-image:linear-gradient(to bottom,transparent 0,#000 12px);
+  -webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 12px);
   --dsh-scrollbar-thumb:var(--dsw-alias-scrollbar-bg-l2);
   --dsh-scrollbar-thumb-hover:var(--dsw-alias-scrollbar-hover-l2);
 }
@@ -175,8 +188,8 @@ export const CSS = `
   --dcl-chart-6:var(--dsw-alias-label-tertiary);
   /* Spacing rhythm: everything in the panel is a multiple of these, so the
      vertical cadence stays even instead of accumulating one-off paddings. */
-  --dcl-gap:12px;
-  --dcl-pad:14px;
+  --dcl-gap:11px;
+  --dcl-pad:13px;
   --dcl-radius:12px;
   display:flex;
   flex-direction:column;
@@ -192,7 +205,7 @@ export const CSS = `
 .dcl-card{
   display:flex;
   flex-direction:column;
-  gap:10px;
+  gap:9px;
   padding:var(--dcl-pad);
   border-radius:var(--dcl-radius);
   background:var(--dsw-alias-fill-l1,var(--dsw-alias-interactive-bg-hover));
@@ -251,7 +264,9 @@ export const CSS = `
 .dcl-hm-l4{background:var(--dsw-alias-state-business-primary)}
 
 /* ---- charts ---- */
-.dcl-chart{width:100%;height:172px}
+/* Charts grow with the panel instead of staying pinned at one size; the
+   clamps keep them sane in a narrow popover and a wide desktop window. */
+.dcl-chart{width:100%;height:clamp(140px,17vh,200px)}
 .dcl-legend{display:flex;flex-wrap:wrap;gap:5px 14px;justify-content:center;padding:0 0 2px}
 .dcl-legend-item{display:inline-flex;align-items:center;gap:6px;font-size:10px;line-height:14px;color:var(--dsw-alias-label-secondary);max-width:100%}
 .dcl-legend-dot{width:8px;height:2px;border-radius:1px;flex:none}
@@ -259,8 +274,8 @@ export const CSS = `
 
 /* Donut beside a ranked list; the list keeps its own column so long model
    names truncate instead of reflowing the chart. */
-.dcl-donut{display:grid;grid-template-columns:minmax(0,132px) minmax(0,1fr);gap:16px;align-items:center}
-.dcl-donut-wrap{position:relative;width:100%;height:132px}
+.dcl-donut{display:grid;grid-template-columns:minmax(0,clamp(112px,11vw,152px)) minmax(0,1fr);gap:18px;align-items:center}
+.dcl-donut-wrap{position:relative;width:100%;height:clamp(112px,11vw,152px)}
 .dcl-donut-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;pointer-events:none;text-align:center;padding:0 26px}
 .dcl-donut-total{color:var(--dsw-alias-label-primary);font-size:15px;font-weight:600;line-height:18px;letter-spacing:-0.02em;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dcl-donut-unit{color:var(--dsw-alias-label-tertiary);font-size:9px;line-height:12px;text-transform:uppercase;letter-spacing:0.06em}

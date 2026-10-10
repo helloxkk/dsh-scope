@@ -12,7 +12,7 @@
  * single fetch. The refresh control is reported upward so the panel header
  * can host it beside the title.
  */
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   CartesianGrid,
   Cell,
@@ -46,16 +46,38 @@ import {
 
 const DAYS_PATH = '/api/dsh-scope/days'
 const RANGES = Object.keys(RANGE_DAYS)
+/**
+ * A refresh against the fold cache often resolves in ~20ms, which would make
+ * the spinner flash for a single frame and read as "nothing happened". Hold
+ * the busy state for at least this long so the feedback is perceptible — and
+ * because the request is already done, the wait costs the user nothing.
+ */
+const MIN_BUSY_MS = 450
 
 /** Fetch the aggregated payload once per open panel; `load` re-runs it. */
 function useUsageData() {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  // Guards against a slow first response overwriting a newer one.
+  const requestRef = useRef(0)
 
   const load = useCallback(() => {
+    const request = ++requestRef.current
+    const startedAt = Date.now()
     setLoading(true)
     setError(null)
+
+    // Hold the busy state to the floor before applying the outcome.
+    const settle = (apply) => {
+      const remaining = Math.max(0, MIN_BUSY_MS - (Date.now() - startedAt))
+      setTimeout(() => {
+        if (request !== requestRef.current) return
+        apply()
+        setLoading(false)
+      }, remaining)
+    }
+
     fetch(DAYS_PATH, { headers: { accept: 'application/json' } })
       .then((response) => {
         if (!response.ok) throw new Error(`HTTP ${response.status}`)
@@ -63,12 +85,10 @@ function useUsageData() {
       })
       .then((payload) => {
         if (payload?.ok === false) throw new Error(payload.message ?? payload.error ?? 'request failed')
-        setData(payload)
-        setLoading(false)
+        settle(() => setData(payload))
       })
       .catch((reason) => {
-        setError(String(reason?.message ?? reason))
-        setLoading(false)
+        settle(() => setError(String(reason?.message ?? reason)))
       })
   }, [])
 
