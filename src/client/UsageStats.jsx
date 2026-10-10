@@ -1,20 +1,30 @@
 /**
- * UsageStats — sidebar footer action.
+ * UsageStats — the sidebar footer action and its panel.
  *
- * The trigger (a badge when the sidebar is wide, an icon on the rail) opens
- * the usage panel; see `AppUsagePanel`. This file owns only the trigger, the
- * outside-click dismissal, and pushing the panel's refresh control into the
- * header. The panel owns its own loading, range and mode state.
+ * The panel header carries the page title, a small pill switcher between the
+ * two pages, and the refresh control for whichever page is showing. Each page
+ * owns its own loading, state and refresh; it reports the refresh control up
+ * so the header can host it in one stable place.
+ *
+ * This file owns the trigger, outside-click dismissal, and the page switch.
  */
 import { useEffect, useRef, useState } from 'react'
 import { AppUsagePanel, RefreshButton } from './AppUsagePanel.jsx'
+import { BalancePanel } from './BalancePanel.jsx'
+
+/** Pages, in tab order. */
+const PAGES = ['usage', 'balance']
+
+/** Reopening returns to the last page viewed. */
+let lastPage = 'usage'
 
 /**
  * @param props - `wide` from the sidebar shell + `t` from the slot runtime.
  */
 export function UsageStats({ wide, t }) {
   const [open, setOpen] = useState(false)
-  // The panel reports its refresh control up so the header can host it.
+  const [page, setPage] = useState(lastPage)
+  // The visible page reports its refresh control here.
   const [refresh, setRefresh] = useState(null)
   const rootRef = useRef(null)
 
@@ -28,6 +38,14 @@ export function UsageStats({ wide, t }) {
   }, [open])
 
   const locale = typeof navigator !== 'undefined' ? navigator.language : 'en'
+
+  const selectPage = (next) => {
+    lastPage = next
+    // Clear first: the incoming page reports its own control on mount, and a
+    // stale one would spend a frame wired to the outgoing page's data.
+    setRefresh(null)
+    setPage(next)
+  }
 
   return (
     <div className="dcl-heatwrap" ref={rootRef}>
@@ -57,13 +75,32 @@ export function UsageStats({ wide, t }) {
       {open && (
         <div className="dcl-heatpanel" role="dialog" aria-label={t('stats.title')}>
           <header className="dcl-head">
-            <span className="dcl-title">{t('stats.title')}</span>
+            <div className="dcl-head-lead">
+              <span className="dcl-title">{t('stats.title')}</span>
+              <div className="dcl-headtabs" role="tablist">
+                {PAGES.map((id) => (
+                  <button
+                    key={id}
+                    type="button"
+                    role="tab"
+                    aria-selected={page === id}
+                    className="dcl-headtab"
+                    data-active={page === id ? '' : undefined}
+                    onClick={() => selectPage(id)}
+                  >
+                    {t(`tab.${id}`)}
+                  </button>
+                ))}
+              </div>
+            </div>
             {refresh !== null ? (
               <RefreshButton t={t} loading={refresh.loading} onClick={refresh.refresh} />
             ) : null}
           </header>
           <div className="dcl-heatbody">
-            <AppUsagePanel t={t} locale={locale} onRefreshState={setRefresh} />
+            {page === 'usage'
+              ? <AppUsagePanel t={t} locale={locale} onRefreshState={setRefresh} />
+              : <BalancePanel t={t} locale={locale} onRefreshState={setRefresh} />}
           </div>
         </div>
       )}

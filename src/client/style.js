@@ -22,10 +22,20 @@ export const CSS = `
 .dcl-ring-fg{fill:none;stroke:var(--dsw-alias-state-business-primary);stroke-width:2;transition:stroke-dasharray .3s ease}
 
 .dcl-panel{position:absolute;top:calc(100% + 6px);right:0;z-index:40;width:340px;max-width:calc(100vw - 24px);display:flex;flex-direction:column;border:1px solid var(--dsw-alias-border-l1);border-radius:12px;background:var(--dsw-alias-bg-layer-2,var(--dsw-alias-bg-base));box-shadow:var(--dsw-shadow-lv2,0 8px 24px rgba(0,0,0,.16));overflow:hidden}
-.dcl-head{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:44px;padding:0 8px 0 16px;flex:none}
-/* Tightened tracking on the panel title: at 13px a neutral letter-spacing
-   reads slightly loose once the label is bold. */
-.dcl-title{color:var(--dsw-alias-label-primary);font-size:13px;font-weight:600;line-height:20px;letter-spacing:-0.01em}
+.dcl-head{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:46px;padding:0 8px 0 16px;flex:none}
+.dcl-head-lead{display:flex;align-items:center;gap:10px;min-width:0}
+/* The page title carries size; the tabs beside it stay quiet. Negative
+   tracking at this size, tightening toward zero as it grows. */
+.dcl-title{color:var(--dsw-alias-label-primary);font-size:16px;font-weight:600;line-height:22px;letter-spacing:-0.02em;white-space:nowrap}
+
+/* Page switcher: borderless pills where only the active one is filled, so the
+   row reads as navigation rather than as a second control strip. */
+.dcl-headtabs{display:inline-flex;align-items:center;gap:2px;flex:none;min-width:0}
+.dcl-headtab{height:24px;padding:0 11px;border:none;border-radius:999px;background:transparent;color:var(--dsw-alias-label-tertiary);font:inherit;font-size:12px;font-weight:500;line-height:24px;cursor:pointer;white-space:nowrap;transition:color 120ms ease-out,background-color 120ms ease-out}
+.dcl-headtab:hover{color:var(--dsw-alias-label-primary)}
+.dcl-headtab:active{transform:scale(.96)}
+.dcl-headtab[data-active]{background:var(--dsw-alias-interactive-bg-hover,var(--dsw-alias-bg-layer-1));color:var(--dsw-alias-label-primary);font-weight:600}
+@media (prefers-reduced-motion:reduce){ .dcl-headtab:active{transform:none} }
 .dcl-body{padding:8px 14px 14px;overflow-y:auto;max-height:60vh;display:flex;flex-direction:column;gap:12px;--dsh-scrollbar-thumb:var(--dsw-alias-scrollbar-bg-l2);--dsh-scrollbar-thumb-hover:var(--dsw-alias-scrollbar-hover-l2)}
 .dcl-section{display:flex;flex-direction:column;gap:6px}
 .dcl-rowhead{display:flex;align-items:baseline;justify-content:space-between;color:var(--dsw-alias-label-tertiary);font-size:11px;line-height:16px;gap:8px}
@@ -66,12 +76,15 @@ export const CSS = `
 .dcl-iconbtn{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border:none;border-radius:6px;background:transparent;color:var(--dsw-alias-label-tertiary);cursor:pointer}
 .dcl-iconbtn:hover{color:var(--dsw-alias-label-secondary);background:var(--dsw-alias-interactive-bg-hover)}
 
-/* The panel is a floating material, not a dialog: it anchors to the trigger
-   it came from and enters along the axis it will leave along, so the spatial
+/* The panel is a floating surface, not a dialog: it anchors to the trigger it
+   came from and enters along the axis it will leave along, so the spatial
    relationship between button and content stays obvious.
    Sizing is content-driven and clamped to the viewport, so a tall window
    shows every section at once and a short one scrolls — no fixed height to
-   outgrow and no media queries to maintain. */
+   outgrow and no media queries to maintain.
+   The background is opaque. A translucent material reads well over uniform
+   chrome, but this panel floats over arbitrary chat content, and text over a
+   varying blurred backdrop loses contrast — legibility wins over the effect. */
 .dcl-heatpanel{
   position:fixed;
   left:12px;
@@ -88,22 +101,18 @@ export const CSS = `
   flex-direction:column;
   border:1px solid var(--dsw-alias-border-l1);
   border-radius:14px;
-  background:color-mix(in srgb,var(--dsw-alias-bg-layer-2,var(--dsw-alias-bg-base)) 88%,transparent);
-  backdrop-filter:blur(24px) saturate(180%);
-  -webkit-backdrop-filter:blur(24px) saturate(180%);
+  background:var(--dsw-alias-bg-layer-2,var(--dsw-alias-bg-base));
   box-shadow:0 1px 1px rgba(0,0,0,.04),0 8px 24px rgba(0,0,0,.14),0 24px 56px rgba(0,0,0,.12);
   overflow:hidden;
   transform-origin:0 100%;
-  /* Material arrival: blur, scale and opacity move together so the surface
-     reads as a real material coming forward, not a plain fade. Critically
-     damped — no overshoot, nothing here was flicked. */
-  animation:dcl-panel-in 260ms cubic-bezier(.32,.72,0,1) both;
+  /* Critically damped: nothing here was flicked, so no overshoot. */
+  animation:dcl-panel-in 220ms cubic-bezier(.32,.72,0,1) both;
 }
 @keyframes dcl-panel-in{
-  from{opacity:0;transform:scale(.97) translateY(8px);backdrop-filter:blur(8px)}
-  to{opacity:1;transform:none;backdrop-filter:blur(24px) saturate(180%)}
+  from{opacity:0;transform:scale(.97) translateY(8px)}
+  to{opacity:1;transform:none}
 }
-/* Bright top edge: light catching the top face of the material. */
+/* Bright top edge: light catching the top face of the surface. */
 .dcl-heatpanel::before{
   content:"";
   position:absolute;
@@ -324,6 +333,10 @@ export const CSS = `
 .dcl-skel-list{width:100%;height:80px;border-radius:8px;align-self:center}
 /* A ring, not a disc: it stands in for the donut. */
 .dcl-skel-ring{width:100%;height:100%;border-radius:50%;border:15px solid var(--dsw-alias-interactive-bg-hover);animation:dcl-skel-pulse 1500ms ease-in-out infinite}
+/* Balance placeholders, sized to the type they stand in for. */
+.dcl-skel-balance-amount{height:38px;width:52%;border-radius:6px}
+.dcl-skel-balance-note{height:16px;width:34%}
+.dcl-skel-balance-row{height:17px;width:70%}
 @media (prefers-reduced-motion:reduce){
   .dcl-skel,.dcl-skel-ring{animation:none;opacity:.7}
 }
@@ -335,12 +348,13 @@ export const CSS = `
 .dcl-chart .recharts-curve.recharts-tooltip-cursor{stroke:var(--dsw-alias-border-l1)}
 /* Translucent floating layer: the tooltip is a material over content, not an
    opaque box competing with it. */
+/* Opaque for the same reason as the panel: it covers chart lines and labels,
+   and a blurred backdrop under 11px text costs more legibility than the
+   material is worth. */
 .dcl-tip{
   border:1px solid var(--dsw-alias-border-l1);
   border-radius:9px;
-  background:color-mix(in srgb,var(--dsw-alias-bg-overlay,var(--dsw-alias-bg-layer-2)) 86%,transparent);
-  backdrop-filter:blur(12px) saturate(150%);
-  -webkit-backdrop-filter:blur(12px) saturate(150%);
+  background:var(--dsw-alias-bg-overlay,var(--dsw-alias-bg-layer-2));
   box-shadow:var(--dsw-shadow-lv2,0 8px 24px rgba(0,0,0,.16));
   padding:7px 10px;
   font-size:11px;
@@ -351,4 +365,19 @@ export const CSS = `
 .dcl-tip-name{display:inline-flex;align-items:center;gap:6px;color:var(--dsw-alias-label-secondary);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--dsw-font-mono,ui-monospace,monospace);font-size:10px}
 .dcl-tip-dot{width:7px;height:7px;border-radius:50%;flex:none}
 .dcl-tip-val{color:var(--dsw-alias-label-primary);font-weight:600}
+
+/* ---- balance page ---- */
+/* The headline figure is the whole point of the page, so it gets the only
+   display-sized type in the panel. */
+.dcl-balance-hero{display:flex;flex-direction:column;gap:3px;padding:6px 0 2px}
+.dcl-balance-amount{color:var(--dsw-alias-label-primary);font-size:32px;font-weight:600;line-height:38px;letter-spacing:-0.03em}
+.dcl-balance-amount-note{color:var(--dsw-alias-label-tertiary);font-size:11px;line-height:16px}
+.dcl-balance-rows{display:flex;flex-direction:column;margin-top:8px;padding-top:4px;border-top:1px solid var(--dsw-alias-border-l2)}
+.dcl-balance-row{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:5px 0;font-size:12px;line-height:17px}
+.dcl-balance-row-label{color:var(--dsw-alias-label-secondary);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dcl-balance-row-value{color:var(--dsw-alias-label-primary);font-weight:600;white-space:nowrap}
+.dcl-balance-note{color:var(--dsw-alias-label-caption);font-size:10px;line-height:15px;margin-top:2px}
+.dcl-balance-actions{display:flex;justify-content:flex-end;margin-top:2px}
+.dcl-link{display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 11px;border:1px solid var(--dsw-alias-border-l2);border-radius:8px;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-secondary);font:inherit;font-size:12px;text-decoration:none;cursor:pointer;transition:color 120ms ease-out}
+.dcl-link:hover{color:var(--dsw-alias-label-primary)}
 `

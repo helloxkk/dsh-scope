@@ -12,7 +12,7 @@
  * single fetch. The refresh control is reported upward so the panel header
  * can host it beside the title.
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   CartesianGrid,
   Cell,
@@ -45,79 +45,20 @@ import {
   formatShortDay,
   formatSummaryTokens,
 } from './statsFormat.js'
+import { useRemote } from './useRemote.js'
 
 const DAYS_PATH = '/api/dsh-scope/days'
 const RANGES = Object.keys(RANGE_DAYS)
-/**
- * A refresh against the fold cache often resolves in ~20ms, which would make
- * the spinner flash for a single frame and read as "nothing happened". Hold
- * the busy state for at least this long so the feedback is perceptible — and
- * because the request is already done, the wait costs the user nothing.
- */
-const MIN_BUSY_MS = 450
 
-/**
- * Last successful payload, kept for the life of the page.
- *
- * The panel unmounts when it closes, so without this every reopen would replay
- * the loading state and the panel would grow from a stub into its full height
- * — a visible jump on every open. With the cache, only the very first open has
- * to show a placeholder; later opens paint real content immediately and refresh
- * behind it.
- */
-let lastPayload = null
-
-/** Fetch the aggregated payload once per open panel; `load` re-runs it. */
-function useUsageData() {
-  const [data, setData] = useState(lastPayload)
-  const [loading, setLoading] = useState(lastPayload === null)
-  const [error, setError] = useState(null)
-  // Guards against a slow first response overwriting a newer one.
-  const requestRef = useRef(0)
-
-  const load = useCallback(() => {
-    const request = ++requestRef.current
-    const startedAt = Date.now()
-    setLoading(true)
-    setError(null)
-
-    // Hold the busy state to the floor before applying the outcome.
-    const settle = (apply) => {
-      const remaining = Math.max(0, MIN_BUSY_MS - (Date.now() - startedAt))
-      setTimeout(() => {
-        if (request !== requestRef.current) return
-        apply()
-        setLoading(false)
-      }, remaining)
-    }
-
-    fetch(DAYS_PATH, { headers: { accept: 'application/json' } })
-      .then((response) => {
-        if (!response.ok) throw new Error(`HTTP ${response.status}`)
-        return response.json()
-      })
-      .then((payload) => {
-        if (payload?.ok === false) throw new Error(payload.message ?? payload.error ?? 'request failed')
-        settle(() => {
-          lastPayload = payload
-          setData(payload)
-        })
-      })
-      .catch((reason) => {
-        settle(() => setError(String(reason?.message ?? reason)))
-      })
-  }, [])
-
-  useEffect(() => { load() }, [load])
-  return { data, loading, error, load }
-}
+/** Survives remounts so reopening the panel does not replay the placeholder. */
+const usageCache = { value: null }
 
 /**
  * @param props - `t` and `locale` from the slot runtime, plus `onRefreshState`
  *   which reports `{ loading, refresh }` so the header can render the control.
  */
 export function AppUsagePanel({ t, locale, onRefreshState }) {
-  const { data, loading, error, load } = useUsageData()
+  const { data, loading, error, load } = useRemote(DAYS_PATH, usageCache)
   const [range, setRange] = useState('7d')
   const [mode, setMode] = useState('daily')
 

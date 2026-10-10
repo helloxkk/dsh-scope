@@ -18,15 +18,23 @@
 import { homedir } from 'node:os'
 import { join, dirname } from 'node:path'
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
+import { createRequire } from 'node:module'
 import { applyUsageDelta, createUsageState, mergeInto, renderUsage } from './usage.js'
 
 /** Stable Cordis plugin name. */
 export const name = 'dsh-scope'
 
-/** Services required before this plugin activates. */
+/**
+ * Services required before this plugin activates.
+ *
+ * `deepseekAccount` is deliberately absent: the balance view is optional and
+ * the plugin must still load on profiles that have no account platform. That
+ * service is read lazily per request instead.
+ */
 export const inject = ['webServer', 'sessions', 'sessionPersistence']
 
 const DAYS_PATH = '/api/dsh-scope/days'
+const BALANCE_PATH = '/api/dsh-scope/balance'
 const CACHE_VERSION = 1
 
 // ---------------------------------------------------------------- wire utils
@@ -76,7 +84,6 @@ function cachePath() {
 
 let loadedCache = null
 let loadPromise = null
-let inflight = null
 
 function serializeDayMap(days) {
   const out = {}
@@ -178,11 +185,74 @@ async function saveCache(ctx, cache) {
   }
 }
 
-/** Single-flight guard: concurrent requests share one aggregation run. */
-function withLock(run) {
-  if (inflight !== null) return inflight
-  inflight = run().finally(() => { inflight = null })
-  return inflight
+/** Single-flight guard: concurrent requests share one run, then release it. */
+function singleFlight() {
+  let inflight = null
+  return (run) => {
+    if (inflight !== null) return inflight
+    inflight = run().finally(() => { inflight = null })
+    return inflight
+  }
+}
+
+// Separate locks per endpoint: sharing one would make a balance request wait on
+// an unrelated usage aggregation and return the wrong payload.
+const withUsageLock = singleFlight()
+const withBalanceLock = singleFlight()
+
+// ------------------------------------------------------------------ balance
+
+/** This package's version, for the platform client header. Read at runtime so
+ *  it cannot drift from package.json. */
+function packageVersion() {
+  try {
+    return createRequire(import.meta.url)('../package.json').version
+  } catch {
+    return '0.0.0'
+  }
+}
+
+/**
+ * Read the signed-in DeepSeek account's wallet balances.
+ *
+ * The account service is optional: profiles without the account platform (for
+ * example a headless one) simply have no `deepseekAccount`, which is reported
+ * as `unavailable` rather than treated as an error.
+ *
+ * @param ctx - host root context.
+ * @param req - the inbound request, used for the caller's locale.
+ * @returns a sanitized status plus wallet balances; never any credential.
+ */
+async function collectBalance(ctx, req) {
+  const account = ctx.get('deepseekAccount')
+  if (account === undefined || typeof account.getBalance !== 'function') return { status: 'unavailable' }
+
+  // The client object carries UI identity only. Timezone comes from the host
+  // because this is a local app: the server and the browser share a clock.
+  const client = {
+    version: packageVersion(),
+    locale: localeOf(req),
+    timezoneOffsetSeconds: -new Date().getTimezoneOffset() * 60,
+  }
+
+  const result = await withBalanceLock(() => account.getBalance(client))
+  // null means "no usable credential" — signed out or the token was rejected.
+  if (result === null || result === undefined) return { status: 'signed-out' }
+  if (result.status !== 'ready') return { status: 'failed' }
+  return {
+    status: 'ready',
+    wallets: result.value ?? [],
+    bonusWallets: result.bonusWallets ?? [],
+  }
+}
+
+/** Map an Accept-Language header onto the `lll-CC` form the platform expects. */
+function localeOf(req) {
+  const header = req.headers?.['accept-language']
+  if (typeof header !== 'string') return 'en-US'
+  const first = header.split(',')[0]?.trim()
+  if (first === undefined || !/^[a-z]{2}(-[A-Za-z]{2})?/.test(first)) return 'en-US'
+  return first.replace('_', '-')
 }
 
 // --------------------------------------------------------- log read adapter
@@ -259,7 +329,7 @@ function resetFold(state) {
  * refolded from scratch to stay exact.
  */
 export async function collectUsage(ctx) {
-  return withLock(async () => {
+  return withUsageLock(async () => {
     const cache = await loadCache()
     let dirty = false
     const live = ctx.get('sessions')
@@ -376,24 +446,30 @@ export async function collectUsage(ctx) {
 
 // ------------------------------------------------------------------- apply
 
+/** Register one loopback-fenced GET route that answers JSON. */
+function route(ctx, path, label, produce) {
+  ctx.effect(() => ctx.webServer.register({
+    kind: 'exact',
+    path,
+    handler: (req, res) => {
+      if (rejectForeignCaller(req, res)) return
+      produce(req)
+        .then((result) => { json(res, 200, { ok: true, ...result }) })
+        .catch((error) => {
+          ctx.logger.warn(`dsh-scope: ${label} failed: ${String(error)}`)
+          json(res, 500, { ok: false, error: 'internal', message: error instanceof Error ? error.message : String(error) })
+        })
+    },
+  }), `dsh-scope: ${label} route`)
+}
+
 /**
- * Host plugin body: register the loopback-fenced usage endpoint.
+ * Host plugin body: register the loopback-fenced usage and balance endpoints.
  * No Config export: this plugin takes no configuration (the ~standard /
  * schemastery schema machinery stays out of the picture entirely).
  * @param ctx - host root context.
  */
 export function apply(ctx) {
-  ctx.effect(() => ctx.webServer.register({
-    kind: 'exact',
-    path: DAYS_PATH,
-    handler: (req, res) => {
-      if (rejectForeignCaller(req, res)) return
-      collectUsage(ctx)
-        .then((result) => { json(res, 200, { ok: true, ...result }) })
-        .catch((error) => {
-          ctx.logger.warn(`dsh-scope: usage aggregation failed: ${String(error)}`)
-          json(res, 500, { ok: false, error: 'internal', message: error instanceof Error ? error.message : String(error) })
-        })
-    },
-  }), 'dsh-scope: days route')
+  route(ctx, DAYS_PATH, 'days', (req) => collectUsage(ctx))
+  route(ctx, BALANCE_PATH, 'balance', (req) => collectBalance(ctx, req))
 }

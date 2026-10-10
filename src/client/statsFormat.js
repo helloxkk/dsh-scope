@@ -80,3 +80,36 @@ export function formatDuration(t, durationMs) {
 export function chartColor(index) {
   return `var(--dcl-chart-${(index % 6) + 1})`
 }
+
+/**
+ * Format a platform wallet amount: `('zh-CN', '42.5', 'CNY')` → `¥42.50`.
+ *
+ * The amount arrives as a decimal string, so a non-numeric value is passed
+ * through rather than rendered as `NaN`; an unrecognized currency code falls
+ * back to a plain `42.50 XXX` instead of throwing out of `Intl`.
+ */
+export function formatCurrency(locale, amount, currency) {
+  const value = Number(amount)
+  if (!Number.isFinite(value)) return `${String(amount)} ${String(currency)}`
+  try {
+    return new Intl.NumberFormat(locale, {
+      style: 'currency',
+      currency,
+      currencyDisplay: 'narrowSymbol',
+    }).format(value)
+  } catch {
+    return `${value.toFixed(2)} ${String(currency)}`
+  }
+}
+
+/** Sum wallet amounts per currency, preserving first-seen order. */
+export function sumWallets(wallets) {
+  const totals = new Map()
+  for (const wallet of wallets) {
+    if (wallet === null || typeof wallet !== 'object') continue
+    const value = Number(wallet.balance)
+    if (!Number.isFinite(value)) continue
+    totals.set(wallet.currency, (totals.get(wallet.currency) ?? 0) + value)
+  }
+  return [...totals.entries()].map(([currency, amount]) => ({ currency, amount }))
+}
