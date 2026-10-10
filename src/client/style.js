@@ -26,7 +26,7 @@ export const CSS = `
 .dcl-head-lead{display:flex;align-items:center;gap:10px;min-width:0}
 /* The page title carries size; the tabs beside it stay quiet. Negative
    tracking at this size, tightening toward zero as it grows. */
-.dcl-title{color:var(--dsw-alias-label-primary);font-size:16px;font-weight:600;line-height:22px;letter-spacing:-0.02em;white-space:nowrap}
+.dcl-title{color:var(--dsw-alias-label-primary);font-size:var(--dcl-fs-title);font-weight:600;line-height:26px;letter-spacing:-0.02em;white-space:nowrap}
 
 /* Page switcher: borderless pills where only the active one is filled, so the
    row reads as navigation rather than as a second control strip. */
@@ -63,7 +63,7 @@ export const CSS = `
 .dcl-stat-label{color:var(--dsw-alias-label-secondary)}
 .dcl-hitblock{display:flex;flex-direction:column;gap:5px;margin-top:2px}
 .dcl-hint{color:var(--dsw-alias-label-tertiary);font-size:12px;line-height:18px;margin:6px 0}
-.dcl-footnote{color:var(--dsw-alias-label-caption);font-size:10px;line-height:14px;margin:2px 0 0}
+.dcl-footnote{color:var(--dsw-alias-label-caption);font-size:11px;line-height:16px;margin:4px 0 0}
 
 /* ---- sidebar footer usage trigger + panel ---- */
 .dcl-heatwrap{position:relative;width:100%;display:flex}
@@ -73,8 +73,6 @@ export const CSS = `
 .dcl-heatbadge:active{transform:scale(.985)}
 .dcl-heatbadge-label{text-overflow:ellipsis;white-space:nowrap;min-width:0;overflow:hidden;text-align:left}
 .dcl-heatbadge-rail{width:36px;height:36px;justify-content:center;gap:0;padding:0;border-radius:50%;flex:none}
-.dcl-iconbtn{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border:none;border-radius:6px;background:transparent;color:var(--dsw-alias-label-tertiary);cursor:pointer}
-.dcl-iconbtn:hover{color:var(--dsw-alias-label-secondary);background:var(--dsw-alias-interactive-bg-hover)}
 
 /* The panel is a floating surface, not a dialog: it anchors to the trigger it
    came from and enters along the axis it will leave along, so the spatial
@@ -91,7 +89,7 @@ export const CSS = `
   bottom:96px;
   z-index:40;
   /* Grows with the window up to a comfortable reading measure. */
-  width:clamp(340px,48vw,760px);
+  width:clamp(400px,54vw,860px);
   max-width:calc(100vw - 24px);
   /* Use every pixel of vertical space between the top of the window and the
      trigger. An arbitrary hard cap here is what forced scrolling on tall
@@ -99,6 +97,15 @@ export const CSS = `
   max-height:calc(100vh - 108px);
   display:flex;
   flex-direction:column;
+  /* Type ramp. Each step is a visible jump, and nothing in the body sits
+     below micro: small type bought vertical space and cost more legibility
+     than the space was worth. Defined on the panel root so the header and the
+     page share one scale. */
+  --dcl-fs-title:20px;
+  --dcl-fs-section:14px;
+  --dcl-fs-value:13px;
+  --dcl-fs-caption:12px;
+  --dcl-fs-micro:11px;
   border:1px solid var(--dsw-alias-border-l1);
   border-radius:14px;
   background:var(--dsw-alias-bg-layer-2,var(--dsw-alias-bg-base));
@@ -140,8 +147,11 @@ export const CSS = `
   --dsh-scrollbar-thumb:var(--dsw-alias-scrollbar-bg-l2);
   --dsh-scrollbar-thumb-hover:var(--dsw-alias-scrollbar-hover-l2);
 }
-.dcl-heaterror{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;padding:8px 10px;border-radius:9px;background:var(--dsw-alias-interactive-bg-hover-danger);color:var(--dsw-alias-state-error-primary);font-size:11px;line-height:17px}
-.dcl-retry{border:none;background:none;color:inherit;font:inherit;font-size:11px;font-weight:600;cursor:pointer;flex:none;padding:0;text-decoration:underline}
+/* The height-locked wrapper: JS pins a min-height to it so switching pages
+   never resizes the panel. Pages that need less simply leave space below. */
+.dcl-heatcontent{display:flex;flex-direction:column;gap:var(--dcl-gap)}
+.dcl-heaterror{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;padding:8px 10px;border-radius:9px;background:var(--dsw-alias-interactive-bg-hover-danger);color:var(--dsw-alias-state-error-primary);font-size:var(--dcl-fs-caption);line-height:18px}
+.dcl-retry{border:none;background:none;color:inherit;font:inherit;font-size:var(--dcl-fs-caption);font-weight:600;cursor:pointer;flex:none;padding:0;text-decoration:underline}
 
 @media (prefers-reduced-motion:reduce){
   /* Cross-fade, no scale or travel. */
@@ -150,44 +160,15 @@ export const CSS = `
   .dcl-heatbadge:active{transform:none}
 }
 
-.dcl-chips{display:flex;gap:8px;flex-wrap:wrap}
-.dcl-chip{flex:1;min-width:100px;display:flex;flex-direction:column;gap:2px;padding:6px 10px;border:1px solid var(--dsw-alias-border-l2);border-radius:10px;background:var(--dsw-alias-fill-l1,transparent)}
-.dcl-chip-label{color:var(--dsw-alias-label-tertiary);font-size:10px;line-height:14px}
-.dcl-chip-value{color:var(--dsw-alias-label-primary);font-size:14px;font-weight:600;line-height:18px;font-variant-numeric:tabular-nums}
 
-.dcl-gridscroll{overflow-x:auto;padding-bottom:2px;--dsh-scrollbar-thumb:var(--dsw-alias-scrollbar-bg-l2);--dsh-scrollbar-thumb-hover:var(--dsw-alias-scrollbar-hover-l2)}
-.dcl-monthrow{display:grid;grid-template-columns:26px repeat(53,11px);gap:2px;margin-bottom:2px;height:12px}
-.dcl-monthmark{grid-row:1;font-size:9px;line-height:12px;color:var(--dsw-alias-label-caption);white-space:nowrap;overflow:visible}
-.dcl-gridrows{display:flex;gap:2px}
-.dcl-weekdays{display:grid;grid-template-rows:repeat(7,11px);gap:2px;width:24px;font-size:9px;line-height:11px;color:var(--dsw-alias-label-caption)}
-.dcl-weekdays span{grid-column:1;text-align:right;padding-right:2px}
-.dcl-grid{display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,11px);grid-auto-columns:11px;gap:2px}
-.dcl-cell{width:11px;height:11px;border-radius:2.5px;border:none;padding:0;cursor:pointer;background:var(--dsw-alias-interactive-bg-hover)}
-.dcl-cell-null{background:transparent;cursor:default}
-.dcl-cell-l0{background:var(--dsw-alias-interactive-bg-hover)}
-.dcl-cell-l1{background:color-mix(in srgb,var(--dsw-alias-state-business-primary) 25%,var(--dsw-alias-interactive-bg-hover))}
-.dcl-cell-l2{background:color-mix(in srgb,var(--dsw-alias-state-business-primary) 50%,var(--dsw-alias-interactive-bg-hover))}
-.dcl-cell-l3{background:color-mix(in srgb,var(--dsw-alias-state-business-primary) 75%,var(--dsw-alias-interactive-bg-hover))}
-.dcl-cell-l4{background:var(--dsw-alias-state-business-primary)}
-.dcl-cell:hover{outline:1.5px solid var(--dsw-alias-label-secondary);outline-offset:-1px}
-.dcl-cell[data-today]{outline:1.5px solid var(--dsw-alias-state-success-primary);outline-offset:-0.5px}
-.dcl-cell[data-selected]{outline:2px solid var(--dsw-alias-state-business-primary);outline-offset:-2px}
-.dcl-cell[data-selected][data-today]{outline-color:var(--dsw-alias-state-business-primary)}
 
-.dcl-heatlegend{display:flex;align-items:center;gap:3px;justify-content:flex-end}
-.dcl-heatlegend .dcl-cell{cursor:default}
-.dcl-heatlegend .dcl-cell:hover{outline:none}
-.dcl-legend-label{color:var(--dsw-alias-label-caption);font-size:9px;line-height:12px;margin:0 4px}
 
-.dcl-daydetail{display:flex;flex-direction:column;gap:3px;padding:10px 12px;border:1px solid var(--dsw-alias-border-l2);border-radius:10px;background:var(--dsw-alias-fill-l1,transparent)}
-.dcl-daydetail-sessions{color:var(--dsw-alias-label-secondary);font-size:11px}
-.dcl-modellist{display:flex;flex-direction:column;gap:2px;margin-top:4px;padding-top:6px;border-top:1px solid var(--dsw-alias-border-l2)}
-.dcl-modelrow{display:flex;justify-content:space-between;gap:8px;font-size:11px;line-height:16px}
-.dcl-modelname{color:var(--dsw-alias-label-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--dsw-font-mono,ui-monospace,monospace)}
 
 /* ---- usage stats panel ---- */
-/* One palette source: series colors mixed from the design-platform aliases,
-   so light and dark stay correct without a media query or a second palette. */
+/* One palette source and one type/spacing scale for the whole panel.
+   Every size below comes from these variables: the previous version had
+   accumulated one-off values between 9px and 12px, and that absence of a
+   real ramp is what made the panel read as cramped rather than considered. */
 .dcl-stats{
   --dcl-chart-1:var(--dsw-alias-state-business-primary);
   --dcl-chart-2:var(--dsw-alias-state-success-primary);
@@ -195,35 +176,34 @@ export const CSS = `
   --dcl-chart-4:var(--dsw-alias-state-error-primary);
   --dcl-chart-5:var(--dsw-alias-state-warn-primary);
   --dcl-chart-6:var(--dsw-alias-label-tertiary);
-  /* Spacing rhythm: everything in the panel is a multiple of these, so the
-     vertical cadence stays even instead of accumulating one-off paddings. */
-  --dcl-gap:11px;
-  --dcl-pad:13px;
+  /* Spacing. Comfortable by default; when the panel runs out of window it
+     scrolls rather than compressing the type to fit. */
+  --dcl-gap:14px;
+  --dcl-pad:16px;
   --dcl-radius:12px;
   display:flex;
   flex-direction:column;
   gap:var(--dcl-gap);
-  /* Tabular figures throughout: numbers are compared column to column, and
-     proportional digits make them jitter as values change. */
+  /* Tabular figures throughout: these numbers are compared column to
+     column, and proportional digits make them jitter as values change. */
   font-variant-numeric:tabular-nums;
-  letter-spacing:-0.005em;
 }
 
-/* Grouping container. A hairline plus a translucent fill reads as a raised
-   card; without both, the card dissolves into the popover background. */
+/* A grouping surface: one fill groups a section, so no border is needed and
+   nothing draws a box around every part of a box. */
 .dcl-card{
   display:flex;
   flex-direction:column;
-  gap:9px;
+  gap:12px;
   padding:var(--dcl-pad);
   border-radius:var(--dcl-radius);
   background:var(--dsw-alias-fill-l1,var(--dsw-alias-interactive-bg-hover));
   border:1px solid var(--dsw-alias-border-l2);
 }
-.dcl-card-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;min-height:24px}
-/* Titles carry hierarchy through weight, not size: a bigger heading would
-   compete with the data it labels. */
-.dcl-card-title{color:var(--dsw-alias-label-primary);font-size:12px;font-weight:600;line-height:18px}
+.dcl-card-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;min-height:28px}
+/* Size and weight together: the section title is clearly larger than the
+   data beneath it, which is what separates a heading from its content. */
+.dcl-card-title{color:var(--dsw-alias-label-primary);font-size:var(--dcl-fs-section);font-weight:600;line-height:20px;letter-spacing:-0.01em}
 
 /* ---- summary ---- */
 .dcl-summary{display:flex;align-items:stretch;border-radius:var(--dcl-radius);background:var(--dsw-alias-fill-l1,var(--dsw-alias-interactive-bg-hover));border:1px solid var(--dsw-alias-border-l2);overflow:hidden}
@@ -231,40 +211,40 @@ export const CSS = `
    the metric count without the caller interleaving separators. */
 .dcl-summary-cell{display:flex;align-items:stretch;flex:1;min-width:0}
 /* The headline metric takes extra width; the four supporting facts stay
-   equal, so the row reads as "one headline, four details" rather than five
-   peers. It also gives the longer Chinese labels room to sit on one line. */
-.dcl-summary-cell:first-child{flex:1.3}
-.dcl-summary-item{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:12px 5px}
-.dcl-summary-div{width:1px;background:var(--dsw-alias-border-l2);margin:10px 0;flex:none}
-.dcl-summary-value{color:var(--dsw-alias-label-primary);font-size:15px;font-weight:600;line-height:19px;letter-spacing:-0.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
-.dcl-summary-cell:first-child .dcl-summary-value{font-size:17px;letter-spacing:-0.03em}
-/* Labels stay on one line at their natural width: wrapping to two lines in a
-   row of five would stagger the baselines. */
-.dcl-summary-label{color:var(--dsw-alias-label-tertiary);font-size:10px;line-height:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;letter-spacing:0.01em}
+   equal, so the row reads as one headline plus four details rather than as
+   five peers. It also gives the longer Chinese labels room on one line. */
+.dcl-summary-cell:first-child{flex:1.35}
+.dcl-summary-item{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:14px 6px}
+.dcl-summary-div{width:1px;background:var(--dsw-alias-border-l2);margin:12px 0;flex:none}
+.dcl-summary-value{color:var(--dsw-alias-label-primary);font-size:17px;font-weight:600;line-height:22px;letter-spacing:-0.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.dcl-summary-cell:first-child .dcl-summary-value{font-size:21px;letter-spacing:-0.03em}
+/* Labels stay on one line: wrapping in a row of five would stagger the
+   baselines and break the row rhythm. */
+.dcl-summary-label{color:var(--dsw-alias-label-tertiary);font-size:var(--dcl-fs-caption);line-height:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 
-/* ---- segmented control ---- */
-.dcl-tabs{display:inline-flex;align-items:center;gap:2px;height:26px;padding:3px;border-radius:999px;background:var(--dsw-alias-bg-base);border:1px solid var(--dsw-alias-border-l2);flex:none}
-.dcl-tab{height:20px;padding:0 10px;border:none;border-radius:999px;background:transparent;color:var(--dsw-alias-label-tertiary);font:inherit;font-size:11px;font-weight:500;line-height:20px;cursor:pointer;white-space:nowrap;transition:color 120ms ease-out,background-color 120ms ease-out}
+/* ---- segmented control (in-panel filters) ---- */
+.dcl-tabs{display:inline-flex;align-items:center;gap:2px;height:28px;padding:3px;border-radius:999px;background:var(--dsw-alias-bg-base);border:1px solid var(--dsw-alias-border-l2);flex:none}
+.dcl-tab{height:22px;padding:0 12px;border:none;border-radius:999px;background:transparent;color:var(--dsw-alias-label-tertiary);font:inherit;font-size:var(--dcl-fs-caption);font-weight:500;line-height:22px;cursor:pointer;white-space:nowrap;transition:color 120ms ease-out,background-color 120ms ease-out}
 .dcl-tab:hover{color:var(--dsw-alias-label-primary)}
 /* Feedback on press, not on release. */
 .dcl-tab:active{transform:scale(.96)}
 .dcl-tab[data-active]{background:var(--dsw-alias-interactive-bg-hover-solid,var(--dsw-alias-bg-layer-2));color:var(--dsw-alias-label-primary);font-weight:600}
 
 /* ---- activity grid ---- */
-.dcl-hm{display:flex;flex-direction:column;gap:5px}
+.dcl-hm{display:flex;flex-direction:column;gap:6px}
 /* The ruler spans exactly the column track, offset by the weekday gutter, so
    labels sit over the columns they name. */
-.dcl-hm-months{display:grid;gap:3px;height:12px;margin-left:22px}
-.dcl-hm-month{font-size:9px;line-height:12px;color:var(--dsw-alias-label-caption);white-space:nowrap;overflow:visible;letter-spacing:0.01em}
+.dcl-hm-months{display:grid;gap:3px;height:15px;margin-left:25px}
+.dcl-hm-month{font-size:var(--dcl-fs-micro);line-height:15px;color:var(--dsw-alias-label-caption);white-space:nowrap;overflow:visible}
 .dcl-hm-body{display:flex;gap:3px}
-.dcl-hm-days{display:flex;flex-direction:column;justify-content:space-between;width:19px;flex:none;padding:1px 0}
-.dcl-hm-day{font-size:9px;line-height:9px;color:var(--dsw-alias-label-caption);display:flex;align-items:center}
+.dcl-hm-days{display:flex;flex-direction:column;justify-content:space-between;width:22px;flex:none;padding:1px 0}
+.dcl-hm-day{font-size:var(--dcl-fs-micro);line-height:12px;color:var(--dsw-alias-label-caption);display:flex;align-items:center}
 .dcl-hm-cols{display:grid;gap:3px;flex:1;min-width:0}
 .dcl-hm-col{display:flex;flex-direction:column;gap:3px;min-width:0}
 .dcl-hm-cell{width:100%;aspect-ratio:1;min-width:0;border-radius:3px;border:1px solid transparent;padding:0;cursor:pointer;background:var(--dsw-alias-interactive-bg-hover);transition:transform 120ms ease-out}
-/* Scale on hover rather than an outline: an outline on a 6px cell reads as a
-   border change and shifts perceived weight across the row. */
-.dcl-hm-cell:hover{transform:scale(1.18);border-color:var(--dsw-alias-label-secondary)}
+/* Scale on hover rather than an outline: an outline on a small cell reads as
+   a border change and shifts perceived weight across the row. */
+.dcl-hm-cell:hover{transform:scale(1.16);border-color:var(--dsw-alias-label-secondary)}
 .dcl-hm-cell[data-selected]{border-color:var(--dsw-alias-state-business-primary);box-shadow:0 0 0 1px var(--dsw-alias-state-business-primary)}
 .dcl-hm-l0{background:var(--dsw-alias-interactive-bg-hover)}
 .dcl-hm-l1{background:color-mix(in srgb,var(--dsw-alias-state-business-primary) 25%,var(--dsw-alias-interactive-bg-hover))}
@@ -273,38 +253,37 @@ export const CSS = `
 .dcl-hm-l4{background:var(--dsw-alias-state-business-primary)}
 
 /* ---- charts ---- */
-/* Charts grow with the panel instead of staying pinned at one size; the
-   clamps keep them sane in a narrow popover and a wide desktop window. */
-.dcl-chart{width:100%;height:clamp(140px,17vh,200px)}
-.dcl-legend{display:flex;flex-wrap:wrap;gap:5px 14px;justify-content:center;padding:0 0 2px}
-.dcl-legend-item{display:inline-flex;align-items:center;gap:6px;font-size:10px;line-height:14px;color:var(--dsw-alias-label-secondary);max-width:100%}
-.dcl-legend-dot{width:8px;height:2px;border-radius:1px;flex:none}
+.dcl-chart{width:100%;height:clamp(168px,20vh,240px)}
+.dcl-legend{display:flex;flex-wrap:wrap;gap:6px 16px;justify-content:center;padding:0 0 2px}
+.dcl-legend-item{display:inline-flex;align-items:center;gap:7px;font-size:var(--dcl-fs-caption);line-height:16px;color:var(--dsw-alias-label-secondary);max-width:100%}
+.dcl-legend-dot{width:10px;height:2px;border-radius:1px;flex:none}
 .dcl-legend-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--dsw-font-mono,ui-monospace,monospace)}
 
 /* Donut beside a ranked list; the list keeps its own column so long model
    names truncate instead of reflowing the chart. */
-.dcl-donut{display:grid;grid-template-columns:minmax(0,clamp(112px,11vw,152px)) minmax(0,1fr);gap:18px;align-items:center}
-.dcl-donut-wrap{position:relative;width:100%;height:clamp(112px,11vw,152px)}
-.dcl-donut-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;pointer-events:none;text-align:center;padding:0 26px}
-.dcl-donut-total{color:var(--dsw-alias-label-primary);font-size:15px;font-weight:600;line-height:18px;letter-spacing:-0.02em;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.dcl-donut-unit{color:var(--dsw-alias-label-tertiary);font-size:9px;line-height:12px;text-transform:uppercase;letter-spacing:0.06em}
+.dcl-donut{display:grid;grid-template-columns:minmax(0,clamp(128px,13vw,172px)) minmax(0,1fr);gap:22px;align-items:center}
+.dcl-donut-wrap{position:relative;width:100%;height:clamp(128px,13vw,172px)}
+.dcl-donut-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;pointer-events:none;text-align:center;padding:0 30px}
+.dcl-donut-total{color:var(--dsw-alias-label-primary);font-size:18px;font-weight:600;line-height:22px;letter-spacing:-0.02em;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dcl-donut-unit{color:var(--dsw-alias-label-tertiary);font-size:var(--dcl-fs-micro);line-height:14px;text-transform:uppercase;letter-spacing:0.06em}
 .dcl-modellist2{display:flex;flex-direction:column;min-width:0}
-.dcl-modelitem{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:baseline;gap:1px 8px;padding:6px 0;border-bottom:1px solid var(--dsw-alias-border-l2)}
+.dcl-modelitem{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:baseline;gap:2px 10px;padding:8px 0;border-bottom:1px solid var(--dsw-alias-border-l2)}
 .dcl-modelitem:last-child{border-bottom:none}
-.dcl-modelitem-dot{width:8px;height:8px;border-radius:2px;flex:none;align-self:center}
-.dcl-modelitem-name{color:var(--dsw-alias-label-primary);font-size:11px;line-height:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--dsw-font-mono,ui-monospace,monospace)}
-.dcl-modelitem-pct{color:var(--dsw-alias-label-primary);font-size:11px;font-weight:600;line-height:15px;text-align:right}
-.dcl-modelitem-tokens{grid-column:2;color:var(--dsw-alias-label-tertiary);font-size:10px;line-height:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dcl-modelitem-dot{width:9px;height:9px;border-radius:2px;flex:none;align-self:center}
+.dcl-modelitem-name{color:var(--dsw-alias-label-primary);font-size:var(--dcl-fs-value);line-height:18px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--dsw-font-mono,ui-monospace,monospace)}
+.dcl-modelitem-pct{color:var(--dsw-alias-label-primary);font-size:var(--dcl-fs-value);font-weight:600;line-height:18px;text-align:right}
+.dcl-modelitem-tokens{grid-column:2;color:var(--dsw-alias-label-tertiary);font-size:var(--dcl-fs-caption);line-height:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 /* ---- controls & states ---- */
-.dcl-refresh{display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 11px;border:1px solid var(--dsw-alias-border-l2);border-radius:8px;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-secondary);font:inherit;font-size:12px;cursor:pointer;transition:color 120ms ease-out,background-color 120ms ease-out}
+.dcl-refresh{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 12px;border:1px solid var(--dsw-alias-border-l2);border-radius:9px;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-secondary);font:inherit;font-size:var(--dcl-fs-caption);cursor:pointer;transition:color 120ms ease-out,background-color 120ms ease-out}
 .dcl-refresh:hover{color:var(--dsw-alias-label-primary)}
 .dcl-refresh:active{transform:scale(.97)}
 .dcl-refresh:disabled{opacity:.5;cursor:default}
-/* Header variant: shorter, borderless chrome that reads as a title-row action. */
-.dcl-refresh-head{height:24px;padding:0 8px;border-color:transparent;background:transparent;font-size:11px;gap:4px}
+/* Header variant: an icon-only target. The header already carries a title and
+   the page tabs, and a third labelled control competes with both. */
+.dcl-refresh-head{width:30px;height:30px;padding:0;justify-content:center;border-color:transparent;background:transparent}
 .dcl-refresh-head:hover{background:var(--dsw-alias-interactive-bg-hover)}
-/* The spinning icon is the entire progress signal: the label stays put so the
+/* The spinning icon is the entire progress signal: no label changes, so the
    header row never reflows mid-request. */
 .dcl-refresh-head[aria-busy] svg{animation:dcl-spin 900ms linear infinite}
 @keyframes dcl-spin{to{transform:rotate(360deg)}}
@@ -315,69 +294,66 @@ export const CSS = `
   .dcl-hm-cell:hover{transform:none}
 }
 
-.dcl-empty{display:flex;flex-direction:column;align-items:center;gap:5px;padding:26px 16px;border:1px dashed var(--dsw-alias-border-l2);border-radius:var(--dcl-radius);text-align:center}
-.dcl-empty-title{color:var(--dsw-alias-label-primary);font-size:12px;font-weight:600;line-height:18px}
-.dcl-empty-desc{color:var(--dsw-alias-label-tertiary);font-size:11px;line-height:16px;max-width:34ch}
+.dcl-empty{display:flex;flex-direction:column;align-items:center;gap:6px;padding:32px 20px;border:1px dashed var(--dsw-alias-border-l2);border-radius:var(--dcl-radius);text-align:center}
+.dcl-empty-title{color:var(--dsw-alias-label-primary);font-size:var(--dcl-fs-value);font-weight:600;line-height:19px}
+.dcl-empty-desc{color:var(--dsw-alias-label-tertiary);font-size:var(--dcl-fs-caption);line-height:18px;max-width:36ch}
 
 /* ---- first-open skeleton ---- */
 /* Occupies the same boxes as the loaded panel so it opens at its final size.
-   A gentle pulse reads as "working" without the noise of a shimmer sweep
-   running across 364 grid cells. */
+   A gentle pulse reads as working without a shimmer sweeping across 364
+   grid cells. */
 .dcl-skel{background:var(--dsw-alias-interactive-bg-hover);border-radius:4px;animation:dcl-skel-pulse 1500ms ease-in-out infinite}
 @keyframes dcl-skel-pulse{0%,100%{opacity:.5}50%{opacity:.95}}
-.dcl-skel-summary-value{height:19px;width:58%}
-.dcl-skel-summary-label{height:13px;width:78%}
-.dcl-skel-tabs{height:26px;width:132px;border-radius:999px;flex:none}
-.dcl-skel-legend{height:14px;width:190px;margin:0 auto;border-radius:7px}
+.dcl-skel-summary-value{height:22px;width:58%}
+.dcl-skel-summary-label{height:16px;width:78%}
+.dcl-skel-tabs{height:28px;width:146px;border-radius:999px;flex:none}
+.dcl-skel-legend{height:16px;width:200px;margin:0 auto;border-radius:8px}
 .dcl-skel-fill{width:100%;height:100%;border-radius:8px}
-.dcl-skel-list{width:100%;height:80px;border-radius:8px;align-self:center}
+.dcl-skel-list{width:100%;height:88px;border-radius:8px;align-self:center}
 /* A ring, not a disc: it stands in for the donut. */
-.dcl-skel-ring{width:100%;height:100%;border-radius:50%;border:15px solid var(--dsw-alias-interactive-bg-hover);animation:dcl-skel-pulse 1500ms ease-in-out infinite}
+.dcl-skel-ring{width:100%;height:100%;border-radius:50%;border:16px solid var(--dsw-alias-interactive-bg-hover);animation:dcl-skel-pulse 1500ms ease-in-out infinite}
 /* Balance placeholders, sized to the type they stand in for. */
-.dcl-skel-balance-amount{height:38px;width:52%;border-radius:6px}
-.dcl-skel-balance-note{height:16px;width:34%}
-.dcl-skel-balance-row{height:17px;width:70%}
+.dcl-skel-balance-amount{height:44px;width:52%;border-radius:6px}
+.dcl-skel-balance-note{height:17px;width:34%}
+.dcl-skel-balance-row{height:19px;width:70%}
 @media (prefers-reduced-motion:reduce){
   .dcl-skel,.dcl-skel-ring{animation:none;opacity:.7}
 }
 
-/* Recharts renders inline SVG; these keep grid/axis on theme tokens. */
+/* Recharts renders inline SVG; these keep grid and axis on theme tokens. */
 .dcl-chart .recharts-cartesian-grid line{stroke:var(--dsw-alias-border-l2)}
 .dcl-chart .recharts-cartesian-axis-line,.dcl-chart .recharts-cartesian-axis-tick-line{stroke:transparent}
-.dcl-chart .recharts-text{fill:var(--dsw-alias-label-caption);font-size:10px}
+.dcl-chart .recharts-text{fill:var(--dsw-alias-label-caption);font-size:var(--dcl-fs-micro)}
 .dcl-chart .recharts-curve.recharts-tooltip-cursor{stroke:var(--dsw-alias-border-l1)}
-/* Translucent floating layer: the tooltip is a material over content, not an
-   opaque box competing with it. */
-/* Opaque for the same reason as the panel: it covers chart lines and labels,
-   and a blurred backdrop under 11px text costs more legibility than the
-   material is worth. */
+
+/* Opaque: the tooltip covers chart lines and labels, and a blurred backdrop
+   under small text costs more legibility than the material is worth. */
 .dcl-tip{
   border:1px solid var(--dsw-alias-border-l1);
   border-radius:9px;
   background:var(--dsw-alias-bg-overlay,var(--dsw-alias-bg-layer-2));
   box-shadow:var(--dsw-shadow-lv2,0 8px 24px rgba(0,0,0,.16));
-  padding:7px 10px;
-  font-size:11px;
-  line-height:16px;
+  padding:8px 11px;
+  font-size:var(--dcl-fs-caption);
+  line-height:18px;
 }
-.dcl-tip-label{color:var(--dsw-alias-label-tertiary);margin-bottom:4px;font-size:10px}
-.dcl-tip-row{display:flex;align-items:center;gap:8px;justify-content:space-between}
-.dcl-tip-name{display:inline-flex;align-items:center;gap:6px;color:var(--dsw-alias-label-secondary);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--dsw-font-mono,ui-monospace,monospace);font-size:10px}
-.dcl-tip-dot{width:7px;height:7px;border-radius:50%;flex:none}
+.dcl-tip-label{color:var(--dsw-alias-label-tertiary);margin-bottom:5px;font-size:var(--dcl-fs-micro)}
+.dcl-tip-row{display:flex;align-items:center;gap:10px;justify-content:space-between}
+.dcl-tip-name{display:inline-flex;align-items:center;gap:7px;color:var(--dsw-alias-label-secondary);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--dsw-font-mono,ui-monospace,monospace);font-size:var(--dcl-fs-micro)}
+.dcl-tip-dot{width:8px;height:8px;border-radius:50%;flex:none}
 .dcl-tip-val{color:var(--dsw-alias-label-primary);font-weight:600}
 
 /* ---- balance page ---- */
-/* The headline figure is the whole point of the page, so it gets the only
+/* The headline figure is the point of the page, so it gets the only
    display-sized type in the panel. */
-.dcl-balance-hero{display:flex;flex-direction:column;gap:3px;padding:6px 0 2px}
-.dcl-balance-amount{color:var(--dsw-alias-label-primary);font-size:32px;font-weight:600;line-height:38px;letter-spacing:-0.03em}
-.dcl-balance-amount-note{color:var(--dsw-alias-label-tertiary);font-size:11px;line-height:16px}
-.dcl-balance-rows{display:flex;flex-direction:column;margin-top:8px;padding-top:4px;border-top:1px solid var(--dsw-alias-border-l2)}
-.dcl-balance-row{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:5px 0;font-size:12px;line-height:17px}
+.dcl-balance-hero{display:flex;flex-direction:column;gap:5px;padding:6px 0 2px}
+.dcl-balance-amount{color:var(--dsw-alias-label-primary);font-size:40px;font-weight:600;line-height:46px;letter-spacing:-0.03em}
+.dcl-balance-amount-note{color:var(--dsw-alias-label-tertiary);font-size:var(--dcl-fs-caption);line-height:17px}
+.dcl-balance-rows{display:flex;flex-direction:column;margin-top:12px;padding-top:6px;border-top:1px solid var(--dsw-alias-border-l2)}
+.dcl-balance-row{display:flex;align-items:baseline;justify-content:space-between;gap:14px;padding:8px 0;font-size:var(--dcl-fs-value);line-height:19px}
 .dcl-balance-row-label{color:var(--dsw-alias-label-secondary);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dcl-balance-row-value{color:var(--dsw-alias-label-primary);font-weight:600;white-space:nowrap}
-.dcl-balance-note{color:var(--dsw-alias-label-caption);font-size:10px;line-height:15px;margin-top:2px}
-.dcl-balance-actions{display:flex;justify-content:flex-end;margin-top:2px}
-.dcl-link{display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 11px;border:1px solid var(--dsw-alias-border-l2);border-radius:8px;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-secondary);font:inherit;font-size:12px;text-decoration:none;cursor:pointer;transition:color 120ms ease-out}
+.dcl-balance-note{color:var(--dsw-alias-label-caption);font-size:var(--dcl-fs-micro);line-height:16px;margin-top:4px}
+.dcl-link{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 13px;border:1px solid var(--dsw-alias-border-l2);border-radius:9px;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-secondary);font:inherit;font-size:var(--dcl-fs-caption);text-decoration:none;cursor:pointer;transition:color 120ms ease-out}
 .dcl-link:hover{color:var(--dsw-alias-label-primary)}
 `

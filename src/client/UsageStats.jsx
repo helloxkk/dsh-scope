@@ -27,6 +27,17 @@ export function UsageStats({ wide, t }) {
   // The visible page reports its refresh control here.
   const [refresh, setRefresh] = useState(null)
   const rootRef = useRef(null)
+  const contentRef = useRef(null)
+
+  /**
+   * The body keeps the tallest height any visited page has needed, for as long
+   * as the panel stays open. Pages differ in height, so without this switching
+   * to a shorter one would shrink the panel and then grow it back on the way
+   * back — the frame-to-frame resize reads as jitter. The extra space on the
+   * shorter page is the price of a stable frame.
+   */
+  const heightsRef = useRef({})
+  const [bodyHeight, setBodyHeight] = useState(null)
 
   useEffect(() => {
     if (!open) return
@@ -36,6 +47,36 @@ export function UsageStats({ wide, t }) {
     document.addEventListener('pointerdown', close)
     return () => { document.removeEventListener('pointerdown', close) }
   }, [open])
+
+  // Re-measure per open, and drop the remembered heights so a reopen adopts
+  // whatever the content needs now rather than a height from a previous run.
+  useEffect(() => {
+    if (open) return
+    heightsRef.current = {}
+    setBodyHeight(null)
+  }, [open])
+
+  // Track the active page's natural height. The wrapper carries the locked
+  // min-height, so its own height is not a reliable measure — read the page's
+  // root instead, which always reports what that page actually needs.
+  useEffect(() => {
+    if (!open) return
+    const el = contentRef.current
+    if (!el) return
+    const measure = () => {
+      const pageEl = el.firstElementChild
+      const target = pageEl ?? el
+      const height = target.getBoundingClientRect().height
+      if (!(height > 0)) return
+      heightsRef.current[page] = height
+      const tallest = Math.max(...Object.values(heightsRef.current))
+      setBodyHeight((prev) => (prev !== null && Math.abs(prev - tallest) < 1 ? prev : Math.ceil(tallest)))
+    }
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [open, page])
 
   const locale = typeof navigator !== 'undefined' ? navigator.language : 'en'
 
@@ -98,9 +139,17 @@ export function UsageStats({ wide, t }) {
             ) : null}
           </header>
           <div className="dcl-heatbody">
-            {page === 'usage'
-              ? <AppUsagePanel t={t} locale={locale} onRefreshState={setRefresh} />
-              : <BalancePanel t={t} locale={locale} onRefreshState={setRefresh} />}
+            {/* The wrapper carries the locked height; the page inside keeps its
+                natural height, so measuring it stays honest. */}
+            <div
+              ref={contentRef}
+              className="dcl-heatcontent"
+              style={bodyHeight !== null ? { minHeight: bodyHeight } : undefined}
+            >
+              {page === 'usage'
+                ? <AppUsagePanel t={t} locale={locale} onRefreshState={setRefresh} />
+                : <BalancePanel t={t} locale={locale} onRefreshState={setRefresh} />}
+            </div>
           </div>
         </div>
       )}
